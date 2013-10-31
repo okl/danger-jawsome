@@ -149,7 +149,7 @@ a JSON processing pipeline.  Each pipeline typically has the following
 phases:
 
 1. Raw text cleanup
-2. Transformations
+2. Transformations and Filtering
 3. Denormalization
 4. Schema Generation
 5. Output formatting
@@ -174,6 +174,8 @@ files- _ultimately the JSON data may be in some such state that it
 cannot be parsed because for one reason or another its not valid
 JSON._
 
+##### Nested, escaped, JSON forms
+
 Often times, applications that are writing out JSON data may have
 components that are also writing out JSON data and returning them as
 strings- these applications yield JSON records where some property's
@@ -184,6 +186,14 @@ parseable JSON records, we really want to be able to traverse into
 those nested property paths. As such assume that we would want to
 unescape any inner nested JSON.
 
+
+##### Handling of Unicode characters
+
+Many systems encode unicode a number of different ways. We need to
+ensure that various encodings are readable so that we don't encounter
+exceptions when attempting to parse the JSON, nor lose the data
+captured by the unicode characters.
+
 ##### Extensibility
 
 We also want to make sure this phase is extensible so that users can
@@ -192,4 +202,56 @@ or correct errors outside of JSON.
 
 #### Transformations
 
-Once the JSON data is 
+Once the JSON data is parsable, it's much easier to work with as an in
+memory map. As such, there are many common transformations that we
+would like to offer through configuration since they are common
+reoccuring patterns.
+
+1. Property renaming / Property remapping
+2. Type Coercion / Type Inferencing (Nullify, Numberify, Boolify)
+3. Value Synonym Mapping
+4. Null Prunning
+5. Type Homogenization Filters / Schema enforcement
+6. Static value injection
+
+
+The thing about these transformations is that they are very sensitive
+to the order in which they are performed. It wouldn't make sense to
+remove all the values that are null, before we've applied a
+transformation that maps all the synonyms for null values to
+null. Similarly, it wouldn't make sense to walk each record and turn
+all of the strings that appear as valid numbers or synonyms for
+boolean values into numbers or booleans after
+removing any key-value pairs that don't match a configured type
+requirement for those fields.
+
+This means all of these transformations themselves form their own
+ordered pipeline.  As such, we propose that the most reasonable order
+for these transformations to take place in is as follows:
+
+
+1. Value Synonym Mapping
+2. Type Coercion / Type Inferencing (Nullify, Numberify, Boolify)
+3. Property renaming / Property Remapping
+4. Null pruning
+5. Type Homogenization Filters / Schema enforcement
+6. Static value injection
+
+Sandwiched around this pipeline, the end user can supply their own
+transformations- enabling the user to do any preprocessing they like,
+or any post processing.  All of the steps in the above pipeline are
+optional but can be configured for convenience.
+
+
+###### Extensibility
+
+During this transformation phase, there are a number of places that a
+user may want to inject their own custom transformations, as this is
+the prime time to specify transformation functions that operate on and
+return json map every step of the way.
+
+
+-- Pre denorm
+8. Property Name Hoisting
+-- Post denorm
+8. Property Name special character handling -- move out?
