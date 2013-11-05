@@ -200,6 +200,10 @@ We also want to make sure this phase is extensible so that users can
 supply their own raw text cleanups to ensure the files are parseable
 or correct errors outside of JSON.
 
+As such, users can provide a function that takes a string and returns
+a string.
+
+
 #### Transformations
 
 Once the JSON data is parsable, it's much easier to work with as an in
@@ -207,12 +211,26 @@ memory map. As such, there are many common transformations that we
 would like to offer through configuration since they are common
 reoccuring patterns.
 
-1. Property renaming / Property remapping
-2. Type Coercion / Type Inferencing (Nullify, Numberify, Boolify)
-3. Value Synonym Mapping
-4. Null Prunning
-5. Type Homogenization Filters / Schema enforcement
-6. Static value injection
+##### Property renaming / Property remapping
+  Renaming keys, or altering the property paths of values
+
+##### Type Coercion / Type Inferencing (Nullify, Numberify, Boolify)
+  Parsing values to determine if they can have their type simplified
+
+##### Value Synonym Mapping
+  Coverting synonyms for values to those literal values (e.g. `"-"` =>
+  `null`, `"yes"` => `true`, `""` => `""`)
+
+##### Null Prunning
+  Removing keys whose corresponding values are `null`
+
+##### Type Homogenization Filters / Schema enforcement
+  For particular fields that we always expect to have a value in a
+  particular range of values (e.g. strings, numbers, booleans), remove
+  any fields that do not have an expected value.
+
+##### Static value injection
+We may want to inject static values for various reasons.
 
 
 The thing about these transformations is that they are very sensitive
@@ -237,13 +255,27 @@ for these transformations to take place in is as follows:
 5. Type Homogenization Filters / Schema enforcement
 6. Static value injection
 
-Sandwiched around this pipeline, the end user can supply their own
-transformations- enabling the user to do any preprocessing they like,
-or any post processing.  All of the steps in the above pipeline are
-optional but can be configured for convenience.
+
 
 
 ###### Extensibility
+
+Sandwiched around this pipeline, the end user can supply their own
+transformations- enabling the user to do any preprocessing they like,
+or any post processing, and by sandwiched, I do indeed mean that they
+can provide a function that takes a clojure map and return a clojure
+map before the 6 steps above run, and after the 6 steps above run.
+
+It's important to note that *Every step in the pipeline accepts a map and returns a map, nil, or false*
+
+This has two important implications:
+
+1. If `nil` or `false` is returned, it's assumed that this element should be filtered our
+and not make it into the final data set.
+2. A user should be careful when supplying his own transformation
+functions to ensure they do not return nils or falses when they mean
+to take no action.
+
 
 During this transformation phase, there are a number of places that a
 user may want to inject their own custom transformations, as this is
@@ -255,3 +287,4 @@ return json map every step of the way.
 8. Property Name Hoisting
 -- Post denorm
 8. Property Name special character handling -- move out?
+sh
