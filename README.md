@@ -211,20 +211,24 @@ memory map. As such, there are many common transformations that we
 would like to offer through configuration since they are common
 reoccuring patterns.
 
-##### Property renaming / Property remapping
-  Renaming keys, or altering the property paths of values
+##### Property Renaming, Remapping and Pruning
+  Renaming keys, altering the property paths of values, or pruning
+  them all together.
 
-##### Type Coercion / Type Inferencing (Nullify, Numberify, Boolify)
+##### String Value Reification (Nullify, Numberify, Boolify) #####
+
   Parsing values to determine if they can have their type simplified
+  from simply being a string.
 
 ##### Value Synonym Mapping
   Coverting synonyms for values to those literal values (e.g. `"-"` =>
   `null`, `"yes"` => `true`, `""` => `""`)
 
-##### Null Prunning
+##### Null Pruning
   Removing keys whose corresponding values are `null`
 
-##### Type Homogenization Filters / Schema enforcement
+##### Property path value-type filtering (i.e. type enforcement) #####
+
   For particular fields that we always expect to have a value in a
   particular range of values (e.g. strings, numbers, booleans), remove
   any fields that do not have an expected value.
@@ -248,11 +252,12 @@ ordered pipeline.  As such, we propose that the most reasonable order
 for these transformations to take place in is as follows:
 
 
-1. Value Synonym Mapping
-2. Type Coercion / Type Inferencing (Nullify, Numberify, Boolify)
-3. Property renaming / Property Remapping
+
+1. String Value Reification (Nullify, Numberify, Boolify)
+2. Value Synonym Mapping
+3. Property Renaming, Remapping and Pruning
 4. Null pruning
-5. Type Homogenization Filters / Schema enforcement
+5. Property path value-type filtering (i.e. type enforcement)
 6. Static value injection
 
 
