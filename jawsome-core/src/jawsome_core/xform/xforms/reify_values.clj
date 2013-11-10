@@ -1,9 +1,12 @@
 (ns jawsome-core.xform.xforms.reify-values
-  "Implements xform pipeline step: String Value Reification"
+  "Implements xform pipeline step: String Value Reification
+
+Largely comes as a readaptation from roxxi/jsonschema parser.clj"
   {:author "Alex Bahouth"
    :date "11/10/2013"}
   (:require [cheshire.core :refer [parse-string]])
-  (:require [roxxi.utils.collections :refer [project-map]]))
+  (:require [roxxi.utils.collections :refer [project-map]])
+  (:require [roxxi.utils.print :refer [print-expr]]))
 
 (defn- first-and-last-char-are [str-val first-c last-c]
   (and
@@ -58,17 +61,25 @@
 
 (declare reify-value)
 
+
+(defn- parse-if-parsible [string]
+  (try 
+    (parse-string string)
+    (catch com.fasterxml.jackson.core.JsonParseException e
+      false)))
+
 (defn- array-if-array [val]
   (when (and (string? val) (array-ish? val))
     (if (possibly-inner-escaped-data? val)
-      (try
-        (vec (map reify-value (parse-string (unescape-one-level val))))
-        (catch com.fasterxml.jackson.core.JsonParseException e
-          (try
-            (vec (map reify-value (parse-string val)))
-            (catch com.fasterxml.jackson.core.JsonParseException e
-              ;; (log-warn here) maybe? optionally?
-              nil))))
+      (loop [escaped val]
+        (let [unescaped (unescape-one-level escaped)
+              parsed (parse-if-parsible unescaped)]
+          (cond
+           parsed (vec (map reify-value val))
+           (= escaped unescaped)
+           ;; log-warn here?
+           nil
+           :else (recur unescaped))))
       (try
         (vec (map reify-value (parse-string val)))
         (catch com.fasterxml.jackson.core.JsonParseException e
@@ -78,16 +89,15 @@
 (defn- map-if-map [val]
   (when (and (string? val) (map-ish? val))
     (if (possibly-inner-escaped-data? val)
-      (try
-        (let [base-json (parse-string (unescape-one-level val))]
-          (project-map base-json :value-xform reify-value))
-          (catch com.fasterxml.jackson.core.JsonParseException e
-            (try
-              (let [base-json (parse-string val)]
-                (project-map base-json :value-xform reify-value))
-              (catch com.fasterxml.jackson.core.JsonParseException e
-                ;; (log-warn here) maybe? optionally?
-                nil))))
+      (loop [escaped val]
+        (let [unescaped (unescape-one-level escaped)
+              parsed (parse-if-parsible unescaped)]
+          (cond
+           parsed (project-map parsed :value-xform reify-value)
+           (= escaped unescaped)
+           ;; log-warn here?
+           nil
+           :else (recur unescaped))))
       (try
         (let [base-json (parse-string val)]
           (project-map base-json :value-xform reify-value))
