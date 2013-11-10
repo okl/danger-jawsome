@@ -116,7 +116,9 @@ additional quotes when nesting, this function is able to parse escaped JSON to u
 inner escaped JSON and return one materialized view of the map that is no longer
 un-escapeable. There is no limit to the amount of escaped JSON that can be handled.
 
-Note, this does not handle the reification of nulls- i.e. \"null\" or \"undefined\".  See
-`value-synonym-mapping` for assistance with nulls"
+Note, this does not handle the reification of nulls- i.e. \"null\" or \"undefined\".
+But, if they are nested inside of escaped JSON they will be elevated to top level strings
+represented by \"null\"  as opposed to \"\\\\\\null\"\\\\\\\"
+See `value-synonym-mapping` for assistance with null reification"
   [some-map]
   (project-map some-map :value-xform reify-value))
