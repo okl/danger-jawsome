@@ -5,8 +5,7 @@ Largely comes as a readaptation from roxxi/jsonschema parser.clj"
   {:author "Alex Bahouth"
    :date "11/10/2013"}
   (:require [cheshire.core :refer [parse-string]])
-  (:require [roxxi.utils.collections :refer [project-map]])
-  (:require [roxxi.utils.print :refer [print-expr]]))
+  (:require [roxxi.utils.collections :refer [project-map]]))
 
 (defn- first-and-last-char-are [str-val first-c last-c]
   (and
