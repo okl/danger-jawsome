@@ -215,10 +215,12 @@ reoccuring patterns.
   Renaming keys, altering the property paths of values, or pruning
   them all together.
 
-##### String Value Reification (Nullify, Numberify, Boolify) #####
+##### String Value Reification (Numberify, Boolify, Arrayify, Mapify) #####
 
   Parsing values to determine if they can have their type simplified
-  from simply being a string.
+  from simply being a string. With the exception of extract nulls,
+  this step will also unbox stringified nested maps, nested arrays,
+  inner escaped JSON, booleans and numbers.
 
 ##### Value Synonym Mapping
   Coverting synonyms for values to those literal values (e.g. `"-"` =>
@@ -253,7 +255,7 @@ for these transformations to take place in is as follows:
 
 
 
-1. String Value Reification (Nullify, Numberify, Boolify)
+1. String Value Reification (Numberify, Boolify, Arrayify, Mapify)
 2. Value Synonym Mapping
 3. Property Renaming, Remapping and Pruning
 4. Null pruning
