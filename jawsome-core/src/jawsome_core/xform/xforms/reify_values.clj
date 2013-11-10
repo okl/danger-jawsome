@@ -5,7 +5,8 @@ Largely comes as a readaptation from roxxi/jsonschema parser.clj"
   {:author "Alex Bahouth"
    :date "11/10/2013"}
   (:require [cheshire.core :refer [parse-string]])
-  (:require [roxxi.utils.collections :refer [project-map]]))
+  (:require [roxxi.utils.collections :refer [project-map]])
+  (:require [roxxi.utils.print :refer [print-expr]]))
 
 (defn- first-and-last-char-are [str-val first-c last-c]
   (and
@@ -62,7 +63,11 @@ Largely comes as a readaptation from roxxi/jsonschema parser.clj"
   ;; that means we probably have additional data inside
   ;; that's further escaped.
   (or (re-find #"\\{2,}" string)
-      (re-find #"\\+\"" string)))
+      ;; now that we're doing an initial pass before
+      ;; parsing, we don't need to be concerned about finding
+      ;; just 1 backslash before a quote
+      ;;(re-find #"\\+\"" string)
+      ))
 
 (declare reify-value)
 
