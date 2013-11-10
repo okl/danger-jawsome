@@ -30,6 +30,12 @@ Largely comes as a readaptation from roxxi/jsonschema parser.clj"
   (when (not (string? val))
     val))
 
+(defn- special-value? 
+  "returns true if this is a special JSON value of true, false, or null"
+  [val]
+  (#{"true" "false" "null"} val))
+
+
 ;; max 64 bit signed number:
 ;; 9,223,372,036,854,775,807 ~ 19 digits
 ;; Clojure can support bigger integers than this
@@ -106,11 +112,14 @@ Largely comes as a readaptation from roxxi/jsonschema parser.clj"
           nil)))))
 
 (defn- reify-value [val]
-  (or (map-if-map val)
-      (array-if-array val)
-      (number-if-number val)
-      (parsed-if-parsed val)
-      val)) ;; else string
+  ;; JSON `true`, `false`, and `null` require special consideration
+  (if (special-value? val)
+    (parse-string val)
+    (or (map-if-map val)
+        (array-if-array val)
+        (number-if-number val)
+        (parsed-if-parsed val)
+        val))) ;; else string
 
 (defn reify-values
   "Takes a map, and examines each value looking for strings- if a string is found
@@ -124,11 +133,6 @@ its members, to continue parsing out values.
 Additionally, since nested maps and vectors can often have their keys and values escaped
 additional quotes when nesting, this function is able to parse escaped JSON to unbox
 inner escaped JSON and return one materialized view of the map that is no longer
-un-escapeable. There is no limit to the amount of escaped JSON that can be handled.
-
-Note, this does not handle the reification of nulls- i.e. \"null\" or \"undefined\".
-But, if they are nested inside of escaped JSON they will be elevated to top level strings
-represented by \"null\"  as opposed to \"\\\\\\null\"\\\\\\\"
-See `value-synonym-mapping` for assistance with null reification"
+un-escapeable. There is no limit to the amount of escaped JSON that can be handled."
   [some-map]
   (project-map some-map :value-xform reify-value))

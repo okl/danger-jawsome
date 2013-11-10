@@ -6,6 +6,25 @@
   (:require [cheshire.core :refer [parse-string]])
   (:require [jawsome-core.xform.xforms.reify-values :refer :all]))
 
+
+
+(deftest reify-values-test
+  (testing "Testing the basic parsing assertions: "
+    (testing "Number"
+      (is (= (reify-values {:a "5"}) {:a 5})))
+    (testing "true/false/null"
+      (is (= (reify-values {:a "true"}) {:a true}))
+      (is (= (reify-values {:a "false"}) {:a false}))
+      (is (= (reify-values {:a "null"}) {:a nil})))
+    (testing "Array"
+      (is (= (reify-values {:a "[5, 6, 7]"}) {:a [5, 6, 7]})))
+    (testing "Map"
+      (is (= (reify-values {:a "{\"a\":\"5\", \"b\":\"6\", \"c\":\"7\"}"})
+             {:a {"a" 5, "b" 6, "c" 7}})))
+    (testing "Parsed"
+      (is (= (reify-values {:a true :b nil :c false :d 6})
+             {:a true :b nil :c false :d 6})))))
+
 (defn resource [file-name]
   (str "test/jawsome_core/resources/xform/xforms/reify_values/" file-name))
 
