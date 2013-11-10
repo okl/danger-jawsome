@@ -18,6 +18,5 @@ This is useful when you have a synonym mapping like:
       current-value)))
 
 (defn make-value-synonymizer [value=>synonym]
-  (fn [some-map]
-    (walk-update-scalars
-     some-map (make-negative-safe-lookup-fn value=>synonym))))
+  (fn [m]
+    (walk-update-scalars m (make-negative-safe-lookup-fn value=>synonym))))

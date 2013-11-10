@@ -17,5 +17,5 @@ location.
 Property Remapping Configuraton is as defined in
 `reassoc-many` in roxxi/clojure-common-utils"
   [property-remapping]
-  (fn remap-properties [some-map]
-    (reassoc-many some-map property-remapping)))
+  (fn remap-properties [m]
+    (reassoc-many m property-remapping)))

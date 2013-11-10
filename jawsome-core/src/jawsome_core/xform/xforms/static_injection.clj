@@ -16,10 +16,8 @@ any internal property paths in both maps."
      (static-value-merge-fn static-value-map false))
   ([static-value-map recurisve?]
      (let [merge-fn (if recurisve? deep-merge merge)]
-       (fn static-value-overlay [some-map]
-         (if (map? some-map)
-           (merge-fn some-map static-value-map)
-           some-map)))))
+       (fn static-value-overlay [m]
+         (if (map? m) (merge-fn m static-value-map) m)))))
 
 (defn default-value-merge-fn
   "Given a `default-value-map` returns a function that that accepts a map
@@ -33,7 +31,5 @@ any internal property paths in both maps."
      (default-value-merge-fn default-value-map false))
   ([default-value-map recurisve?]
      (let [merge-fn (if recurisve? deep-merge merge)]
-       (fn [some-map]
-         (if (map? some-map)
-           (merge-fn default-value-map some-map)
-           some-map)))))
+       (fn [m]
+         (if (map? m) (merge-fn default-value-map m) m)))))

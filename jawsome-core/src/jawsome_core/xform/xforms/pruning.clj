@@ -6,5 +6,5 @@
 
 (defn prune-nils
   "Removes all property paths that ultimately terminate at a nil"
-  [some-map]
-  (prune-map-scalars some-map nil?))
+  [m]
+  (prune-map-scalars m nil?))
