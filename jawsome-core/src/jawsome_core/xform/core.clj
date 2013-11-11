@@ -15,7 +15,8 @@
 (defprotocol Transform
   (xform [_ m] "Takes a map and returns a map, nil, or false"))
 
-;; In fact, we'll do the same for our OOB transforms.
+;; Useful Macros for easily wrapping your own functions
+;; to support the Transform protocol.
 
 (defmacro wrap-simple-xform
   "Takes a function that maintains the requirement
@@ -35,6 +36,8 @@ function constructors"
      (let [~'initd-fn (apply ~f ~'init-vals)]
        (reify Transform
          (xform [_ ~'m] (~'initd-fn ~'m))))))
+
+;; In fact, let's wrap all of our "built-in" xforms.
 
 ;; make-prune-nils-xform, make-reify-values-xform, etc.
 (wrap-simple-xform prune-nils)
