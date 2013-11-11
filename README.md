@@ -253,17 +253,12 @@ This means all of these transformations themselves form their own
 ordered pipeline.  As such, we propose that the most reasonable order
 for these transformations to take place in is as follows:
 
-
-
 1. String Value Reification (Numberify, Boolify, Arrayify, Mapify)
 2. Value Synonym Mapping
 3. Property Renaming, Remapping and Pruning
 4. Null pruning
 5. Property path value-type filtering (i.e. type enforcement)
 6. Static value injection
-
-
-
 
 ###### Extensibility
 
