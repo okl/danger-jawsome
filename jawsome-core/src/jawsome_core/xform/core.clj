@@ -22,9 +22,12 @@
   "Takes a function that maintains the requirement
 of the protocol above, and creates a Transform factory function"
   [f]
-  `(defn ~(symbol (str "make-" f "-xform")) []
-     (reify Transform
-       (xform [_ ~'m] (~f ~'m)))))
+  (let [name (if (.startsWith (str f) "make-")
+               (str f "-xform")
+               (str "make-" f "-xform"))]
+    `(defn ~(symbol name) []
+       (reify Transform
+         (xform [_ ~'m] (~f ~'m))))))
 
 (defmacro wrap-init-xform
   "Takes a function that maintains the requirement
@@ -32,10 +35,13 @@ of the protocol above, and creates a Transform factory function,
 passing any intialization values required directly to the
 function constructors"
   [f]
-  `(defn ~(symbol (str f "-xform")) [& ~'init-vals]
-     (let [~'initd-fn (apply ~f ~'init-vals)]
-       (reify Transform
-         (xform [_ ~'m] (~'initd-fn ~'m))))))
+  (let [name (if (.startsWith (str f) "make-")
+               (str f "-xform")
+               (str "make-" f "-xform"))]
+    `(defn ~(symbol name) [& ~'init-vals]
+       (let [~'initd-fn (apply ~f ~'init-vals)]
+         (reify Transform
+           (xform [_ ~'m] (~'initd-fn ~'m)))))))
 
 ;; In fact, let's wrap all of our "built-in" xforms.
 
@@ -43,7 +49,7 @@ function constructors"
 (wrap-simple-xform prune-nils)
 (wrap-simple-xform reify-values)
 
-;; make-property-remapper-xform, static-value-merge-fn-xform, etc.
+;; make-property-remapper-xform, make-static-value-merge-fn-xform, etc.
 (wrap-init-xform make-property-remapper)
 (wrap-init-xform make-value-type-filter)
 (wrap-init-xform make-value-synonymizer)
