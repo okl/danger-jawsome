@@ -28,7 +28,7 @@
 
 (defn unicode-recode [line]
   (clojure.string/replace line
-                          #"((\\)+x[a-fA-F0-9]{2,4})+"
+                          #"((\\)+x[a-fA-F0-9]{2})+"
                           (fn [matches]
                             (let [hex-strs
                                   (rest (clojure.string/split (matches 0) #"(\\)+x"))]
