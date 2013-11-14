@@ -1,3 +1,8 @@
+(ns jawsome-core.reader.xforms.cruft
+  {:author "Alex Bahouth"
+   :date "11/14/2013"}
+  (:require [roxxi.utils.print :refer [print-expr]]))
+
 ;; # Criteria for lines we even want to try to read from a file.
 
 ;; ## Remove any text preceding JSON
@@ -8,30 +13,49 @@
 ;;
 (defn- line-starts-with-garbage?
   "Returns true if the line doesn't start with a '{'"
-  [log-line-string]
-  (not (= (get log-line-string 0) \{)))
+  [line]
+  (not (= (get line 0) \{)))
 
 (defn- line-ends-with-garbage?
   "Returns true if the line doesn't start with a '{'"
-  [log-line-string]
-  (let [end-pos (- (count log-line-string) 1)]
-    (not (= (get log-line-string end-pos) \}))))
+  [line]
+  (let [end-pos (- (count line) 1)]
+    (not (= (get line end-pos) \}))))
 
-(defn remove-extraenous-line-markup [log-line-string]
-  (if (or (line-starts-with-garbage? log-line-string)
-          (line-ends-with-garbage? log-line-string))
-    (let [the-line-less-garbage (re-find #"\{.*\}" log-line-string)]
-      (or the-line-less-garbage
+(defn- remove-extraenous-line-markup [line]
+  (if (or (line-starts-with-garbage? line)
+          (line-ends-with-garbage? line))
+    (let [the-line-less-garbage (re-find #"\{.*\}" line)]
+       (or the-line-less-garbage
+          ;; TODO log this instead of print
           (and (print-expr
                 (str "This line seems to be garbage, doesn't start with '{', or end with '}':"
-                     log-line-string))
+                     line))
                ;; throw out any garbage lines.
                ;; It would be better to throw an exception
                ;; but because we have this code running
                ;; inside the jsonschema code... well...
                ;; Refactor some day
                "")))
-    log-line-string))
+    line))
 
 
-;; should handle comments and skipping lines with line comments
+;; Should handle comments and skipping lines with line comments
+;; `    // {"foo": "bar"}`
+;; would be thrown away. No matter how many leading spaces.
+(defn- remove-single-line-comments [line]
+  (if (re-find #"^\s*\/\/" line)
+    ""
+    line))
+
+
+(defmacro empty-string-trap [str-fn->str]
+  `(fn skip-if-empty-str [s#]
+    (if (empty? s#)
+       s#
+       (~str-fn->str s#))))
+
+(def remove-cruft
+  ;; Order matters! We should remove comments first!
+  (comp (empty-string-trap remove-extraenous-line-markup)
+        remove-single-line-comments))

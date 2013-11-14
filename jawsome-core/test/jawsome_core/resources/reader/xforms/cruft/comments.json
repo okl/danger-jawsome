@@ -1,0 +1,5 @@
+{"hello" : "hi", "hay" : "ho!"}
+//Comment this line!{"hello" : "hi", "hay" : "ho!"}
+      //leading spaces {"hello" : "hi", "hay" : "ho!"}
+// Nothing but comments
+{"hello" : "hi", "hay" : "ho!"} //some text the end of the line
