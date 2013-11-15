@@ -1,6 +1,6 @@
 (ns jawsome-core.reader.xforms.cruft
   {:author "Alex Bahouth"
-   :date "11/14/2013"}  
+   :date "11/14/2013"}
   (:require [clojure.tools.logging :as log]))
 
 ;; # Criteria for lines we even want to try to read from a file.
@@ -51,7 +51,28 @@
        s#
        (~str-fn->str s#))))
 
+;; See http://www.regular-expressions.info/unicode.html
+(defn string-contains-null-character? [some-string]
+  (re-find #"\p{C}" some-string))
+
+(def no-null-characters?
+  (complement string-contains-null-character?))
+
+;; Top level predicate about whether or not we should
+;; even consider trying to reason about a line
+;;
+(defn acceptable-line? [log-line]
+  (and (string? log-line)
+       (no-null-characters? log-line)))
+
+(defn remove-unacceptable-line [line]
+  (if (acceptable-line? line)
+    line
+    ""))
+
+
 (def remove-cruft
   ;; Order matters! We should remove comments first!
   (comp (empty-string-trap remove-extraenous-line-markup)
-        remove-single-line-comments))
+        remove-single-line-comments
+        remove-unacceptable-line))

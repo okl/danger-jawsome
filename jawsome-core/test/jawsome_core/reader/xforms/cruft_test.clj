@@ -30,6 +30,17 @@
     (testing "with a line that has no braces"
       (is (= (remove-cruft no-braces) "")))))
 
+
+(deftest remove-null-data-line-test
+  "Testing if we can handle rows of corrupted or bad data that has 
+occured in the wild"
+  (let [null-filled-data
+        (clojure.string/split
+         (slurp (resource "null-chars.json"))
+         #"\n")]
+     (testing "against a bunch of bad data!"
+       (is (every? empty? (map remove-cruft null-filled-data))))))
+
 (deftest remove-single-line-comments-test
   "Testing that we can correctly remove single line comments"
   (let [[clean start leading-space comments-only end-of-line]
