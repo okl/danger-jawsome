@@ -5,6 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [roxxi/clojure-common-utils "0.0.18"]
+                 [roxxi/denormal "0.2.3"]
                  [org.clojure/tools.logging "0.2.6"]
                  [clj-yaml "0.4.0"]
                  [cheshire "5.2.0"]]

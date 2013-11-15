@@ -2,6 +2,7 @@
   {:author "Alex Bahouth"
    :date "11/10/2013"}
   (:require [roxxi.utils.print :refer [print-expr]])
+  (:require [denormal.core :refer [denormalize-map]])
   (:use jawsome-core.xform.xforms.property-mapping
         jawsome-core.xform.xforms.pruning
         jawsome-core.xform.xforms.reify-values
@@ -60,6 +61,7 @@ function constructors"
 (wrap-init-xform make-value-synonymizer)
 (wrap-init-xform static-value-merge-fn)
 (wrap-init-xform default-value-merge-fn)
+(wrap-init-xform denormalize-map)
 
 (defn make-composite-xform
   "Create a Transform which applies each Transform in order from left to right"
