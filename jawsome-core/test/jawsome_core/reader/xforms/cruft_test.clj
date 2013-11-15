@@ -10,7 +10,7 @@
 
 (deftest remove-extraenous-line-markup-test
   "Testing if we can parse JSON lines out of non-comment blocks of text"
-  (let [[clean start end start-n-end]
+  (let [[clean start end start-n-end no-front-brace no-back-brace]
         (clojure.string/split
          (slurp (resource "extraneous-line-markup.json"))
          #"\n")]
@@ -21,7 +21,11 @@
     (testing "with a line ending with cruft"
       (is (= (remove-cruft end) clean)))
     (testing "with a line caked in cruft"
-      (is (= (remove-cruft start-n-end) clean)))))
+      (is (= (remove-cruft start-n-end) clean)))
+    (testing "with a line caked in cruft"
+      (is (= (remove-cruft no-front-brace) "")))
+    (testing "with a line caked in cruft"
+      (is (= (remove-cruft no-back-brace) "")))))
 
 (deftest remove-single-line-comments-test
   "Testing that we can correctly remove single line comments"
@@ -39,3 +43,4 @@
       (is (= (remove-cruft comments-only) "")))
         (testing "comments after the JSON"
       (is (= (remove-cruft end-of-line) clean)))))
+

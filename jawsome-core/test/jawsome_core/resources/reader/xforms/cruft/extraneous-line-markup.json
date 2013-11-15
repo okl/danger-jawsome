@@ -2,3 +2,5 @@
 text-at-the-front-of-the-line:{"hello" : "hi", "hay" : "ho!"}
 {"hello" : "hi", "hay" : "ho!"}some text the end of the line
 text at the front and at the back{"hello" : "hi", "hay" : "ho!"}some text the end of the line
+"hello" : "hi", "hay" : "ho!"}this line is broken
+this line is also broken{"hello" : "hi", "hay" : "ho!"
