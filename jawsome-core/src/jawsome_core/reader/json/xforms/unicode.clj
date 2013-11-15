@@ -1,4 +1,4 @@
-(ns jawsome-core.reader.xforms.unicode
+(ns jawsome-core.reader.json.xforms.unicode
   {:author "Alex Bahouth"
    :date "11/10/2013"}
   (:require [roxxi.utils.print :refer [print-expr]]))

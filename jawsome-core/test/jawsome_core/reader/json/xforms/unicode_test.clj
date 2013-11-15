@@ -1,11 +1,11 @@
-(ns jawsome-core.reader.xforms.unicode-test
+(ns jawsome-core.reader.json.xforms.unicode-test
   (:require [clojure.test :refer :all]
             [roxxi.utils.print :refer :all])
-  (:require [jawsome-core.reader.xforms.unicode :refer [unicode-recode]]))
+  (:require [jawsome-core.reader.json.xforms.unicode :refer [unicode-recode]]))
 
 
 (defn- resource [filename]
-  (str "test/jawsome_core/resources/reader/xforms/unicode/" filename))
+  (str "test/jawsome_core/resources/reader/json/xforms/unicode/" filename))
 
 
 (deftest unicode-recode-test

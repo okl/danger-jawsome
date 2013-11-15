@@ -1,11 +1,11 @@
-(ns jawsome-core.reader.xforms.cruft-test
+(ns jawsome-core.reader.json.xforms.cruft-test
   (:require [clojure.test :refer :all]
             [roxxi.utils.print :refer :all])
-  (:require [jawsome-core.reader.xforms.cruft :refer [remove-cruft]]))
+  (:require [jawsome-core.reader.json.xforms.cruft :refer [remove-cruft]]))
 
 
 (defn- resource [filename]
-  (str "test/jawsome_core/resources/reader/xforms/cruft/" filename))
+  (str "test/jawsome_core/resources/reader/json/xforms/cruft/" filename))
 
 
 (deftest remove-extraenous-line-markup-test
