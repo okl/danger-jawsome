@@ -24,11 +24,11 @@
     (testing "with a line caked in cruft"
       (is (= (remove-cruft start-n-end) clean)))
     (testing "with a line missing a starting brace"
-      (is (= (remove-cruft no-front-brace) "")))
+      (is (= (remove-cruft no-front-brace) nil)))
     (testing "with a line missing an ending"
-      (is (= (remove-cruft no-back-brace) "")))
+      (is (= (remove-cruft no-back-brace) nil)))
     (testing "with a line that has no braces"
-      (is (= (remove-cruft no-braces) "")))))
+      (is (= (remove-cruft no-braces) nil)))))
 
 
 (deftest remove-null-data-line-test
@@ -50,11 +50,11 @@ occured in the wild"
     (testing "with a clean line"
       (is (= (remove-cruft clean) clean)))
     (testing "with comments at the start of the line"
-      (is (= (remove-cruft start) "")))
+      (is (= (remove-cruft start) nil)))
     (testing "with whitespace in front of the first comments"
-      (is (= (remove-cruft leading-space) "")))
+      (is (= (remove-cruft leading-space) nil)))
     (testing "with no json, but comments"
-      (is (= (remove-cruft comments-only) "")))
+      (is (= (remove-cruft comments-only) nil)))
         (testing "comments after the JSON"
       (is (= (remove-cruft end-of-line) clean)))))
 

@@ -61,18 +61,22 @@
 ;; Top level predicate about whether or not we should
 ;; even consider trying to reason about a line
 ;;
-(defn acceptable-line? [log-line]
+(defn- acceptable-line? [log-line]
   (and (string? log-line)
        (no-control-characters? log-line)))
 
-(defn remove-unacceptable-line [line]
+(defn- remove-unacceptable-line [line]
   (if (acceptable-line? line)
     line
     ""))
 
 
-(def remove-cruft
+(def remove-cruft-fn
   ;; Order matters! We should remove comments first!
   (comp (empty-string-trap remove-extraenous-line-markup)
         remove-single-line-comments
         remove-unacceptable-line))
+
+(defn remove-cruft [s]
+  (let [result (remove-cruft-fn s)]
+    (if (empty? result) nil result)))

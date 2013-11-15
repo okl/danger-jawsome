@@ -13,10 +13,15 @@
 ;; In order to provide a hook to users to define their own
 ;; transforms, all they need do is implement this protocol.
 (defprotocol Transform
-  (xform [_ m] "Takes a map and returns a map, nil, or false"))
+  (xform [_ m] "Takes a map and returns a seq of maps"))
 
 ;; Useful Macros for easily wrapping your own functions
 ;; to support the Transform protocol.
+
+(defn- seqify [m-or-s]
+  (if (map? m-or-s)
+    (list m-or-s)
+    (seq m-or-s)))
 
 (defmacro wrap-simple-xform
   "Takes a function that maintains the requirement
@@ -27,7 +32,7 @@ of the protocol above, and creates a Transform factory function"
                (str "make-" f "-xform"))]
     `(defn ~(symbol name) []
        (reify Transform
-         (xform [_ ~'m] (~f ~'m))))))
+         (xform [_ ~'m] (seqify (~f ~'m)))))))
 
 (defmacro wrap-init-xform
   "Takes a function that maintains the requirement
@@ -41,7 +46,7 @@ function constructors"
     `(defn ~(symbol name) [& ~'init-vals]
        (let [~'initd-fn (apply ~f ~'init-vals)]
          (reify Transform
-           (xform [_ ~'m] (~'initd-fn ~'m)))))))
+           (xform [_ ~'m] (seqify (~'initd-fn ~'m))))))))
 
 ;; In fact, let's wrap all of our "built-in" xforms.
 
