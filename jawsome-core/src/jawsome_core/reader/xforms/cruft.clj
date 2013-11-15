@@ -28,9 +28,9 @@
 (defn- remove-extraenous-line-markup [line]
   (if (or (line-starts-with-garbage? line)
           (line-ends-with-garbage? line))
-    (letck [the-line-less-garbage (re-find #"\{.*\}" line)]
+    (let [the-line-less-garbage (re-find #"\{.*\}" line)]
        (or the-line-less-garbage
-           (do 
+           (do
              (log/warn (str msg line))
              "")))
     line))
