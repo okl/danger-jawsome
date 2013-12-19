@@ -31,5 +31,5 @@ of the protocol above, and creates a Transform factory function"
          (xform [_ ~'s]
            (seqify (~f ~'s)))))))
 
-(wrap-simple-xform remove-cruft)
-(wrap-simple-xform unicode-recode)
+(wrap-simple-xform remove-cruft) ;; make-remove-cruft-xform
+(wrap-simple-xform unicode-recode) ;; make-unicode-recode-xform
