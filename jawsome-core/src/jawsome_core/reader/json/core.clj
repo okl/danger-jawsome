@@ -2,7 +2,7 @@
   {:author "Alex Bahouth"
    :date "11/10/2013"}
   (:require [cheshire.core :refer [parse-string]])
-  (:require [jawsome-core.reader.json.xform])
+  (:require [jawsome-core.reader.json.xform]))
 
 ;; Just rebind these to cheshire directly. No need to improve upon something that's great.
 

@@ -24,13 +24,25 @@
     (list m-or-s)
     (seq m-or-s)))
 
+(defn- starts-with [x s]
+  (.startsWith (str x) s))
+
+(defn- make-factory-fn-name [fn-name]
+  (if (starts-with fn-name "make-")
+    (str fn-name "-xform")
+    (str "make-" fn-name "-xform")))
+
+(defmacro apply-if [x pred? conseq]
+  `(let [x# ~x]
+     (if (~pred? x#)
+       (~conseq x#)
+       x#)))
+
 (defmacro wrap-simple-xform
   "Takes a function that maintains the requirement
 of the protocol above, and creates a Transform factory function"
   [f]
-  (let [name (if (.startsWith (str f) "make-")
-               (str f "-xform")
-               (str "make-" f "-xform"))]
+  (let [name (make-factory-fn-name f)]
     `(defn ~(symbol name) []
        (reify Transform
          (xform [_ ~'m] (seqify (~f ~'m)))))))
@@ -41,13 +53,17 @@ of the protocol above, and creates a Transform factory function,
 passing any intialization values required directly to the
 function constructors"
   [f]
-  (let [name (if (.startsWith (str f) "make-")
-               (str f "-xform")
-               (str "make-" f "-xform"))]
+  (let [name (make-factory-fn-name f)]
     `(defn ~(symbol name) [& ~'init-vals]
        (let [~'initd-fn (apply ~f ~'init-vals)]
          (reify Transform
            (xform [_ ~'m] (seqify (~'initd-fn ~'m))))))))
+
+;; (defmacro wrap-init-xforms
+;;   [fns]
+;;   (let [registered-names (map extract-name fns)]
+;;   (loop [forms '(
+;;   `(do ~@forms
 
 ;; In fact, let's wrap all of our "built-in" xforms.
 
