@@ -2,21 +2,26 @@
   {:author "Alex Bahouth"
    :date "11/10/2013"}
   (:require [cheshire.core :refer [parse-string]])
-  (:require [jawsome-core.reader.json.xform]))
+  (:require [jawsome-core.reader.json.xform])
+  (:require [jawsome-core.reader.json.xforms.unicode :refer [unicode-recode]])
+  (:require [jawsome-core.reader.json.xforms.cruft :refer [remove-cruft]]))
 
-;; Just rebind these to cheshire directly. No need to improve upon something that's great.
+;; Just rebind the parsing to cheshire directly.
+;; No need to improve upon something that's great.
 
 
-(defprotocol JsonReader
-  (read-str [_ string]
-    "Returns a clojure map representing a json string"))
-
-(defn make-json-reader [& {:keys [pre-xform key-fn array-coerce-fn]}]
+(defn make-json-reader
+  "Returns a function that takes a string and returns a
+clojure map representing analogous to the JSON string"
+  [& {:keys [pre-xform remove-cruft? unicode-recode? key-fn array-coerce-fn]
+      :or {remove-cruft? true
+           recode-unicode? true}}]
   (let [parser (fn cheshire-parser [s]
-                 (parse-string s key-fn array-coerce-fn))]
-    (if pre-read-xform
-      (reify JsonReader
-        (read-str [_ string]
-          (map parser (pre-xform string))))
-      (reify JsonReader [_ string]
-        (parser string)))))
+                 (parse-string s key-fn array-coerce-fn))
+        pre-xforms (filter identity
+                           (list (and remove-cruft? remove-cruft)
+                                 (and unicode-recode? unicode-recode)
+                                 (and pre-xform)))
+        pre-read-xform (apply comp pre-xforms)]
+    (fn json-reader [string]
+      (parser (pre-read-xform string)))))

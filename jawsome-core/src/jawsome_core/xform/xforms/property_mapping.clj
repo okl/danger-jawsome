@@ -15,7 +15,7 @@ and removes the value if the property path maps to a nil
 location.
 
 Property Remapping Configuraton is as defined in
-`reassoc-many` in roxxi/clojure-common-utils"
+`reassoc-many` in com.onekingslane.danger/clojure-common-utils"
   [property-remapping]
   (fn remap-properties [m]
     (reassoc-many m property-remapping)))
