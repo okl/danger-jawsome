@@ -32,12 +32,18 @@
   (do
     (println "Read cfg is" xforms)
     (with-registry r/xform-registry
-      (pipeline-interp xforms))))
+      (let [xform (pipeline-interp xforms)
+            composed-xform (comp list xform)
+            json-reader (r/make-json-reader :pre-xform composed-xform)]
+        (println "j parses to" (r/read-str json-reader j))
+        ))))
 (defmethod pipeline-interp :xform-phase [[_ xforms]]
   (do
     (println "Xform cfg is" xforms)
     (with-registry x/xform-registry
-      (pipeline-interp xforms))))
+      (let [xform (pipeline-interp xforms)]
+        (println "this is the result of calling pipeline xform on j:"
+                 (xform j))))))
 (defmethod pipeline-interp :convert-format-phase [[_ & convert-cfg]]
   (do
     (println "Convert-format cfg is" convert-cfg)))
@@ -45,14 +51,11 @@
 (defmethod pipeline-interp :xforms [[_ & xforms]]
   (let [partitioned (partition-by keyword? xforms)
         xform*enabled?*args (map #(apply concat %) (partition 2 partitioned))
-        prepend-xform (map #(list 'xform %) xform*enabled?*args)
-        xforms (if (empty? prepend-xform)
+        parseable-xforms (map #(list 'xform %) xform*enabled?*args)
+        xforms (if (empty? parseable-xforms)
                  [identity]
-                 (cons list
-                       (map read-interp prepend-xform)))
-        composed-xform (apply comp xforms)
-        json-reader (r/make-json-reader :pre-xform composed-xform)]
-    (println "j parses to" (r/read-str json-reader j))))
+                 (map pipeline-interp parseable-xforms))]
+    (apply comp xforms)))
 
 (defn- enabled? [xform]
   (true? (second xform)))
@@ -76,13 +79,12 @@
                 :unicode-recode true
                 :remove-cruft true
                 ))
-   ;; (xform-phase (xforms
-   ;;         :reify-values true foo
-   ;;         :make-property-remapper false
-   ;;         :make-value-type-filter false
-   ;;         :make-value-synonymizer false
-   ;;         :static-value-merge-fn false
-   ;;         :default-value-merge-fn true
-   ;;         :prune-nils true bar baz
-   ;;         :denormalize-map false))
-   ))
+   (xform-phase (xforms
+                 :reify-values false
+                 :make-property-remapper false
+                 :make-value-type-filter false
+                 :make-value-synonymizer false
+                 :static-value-merge-fn false
+                 :default-value-merge-fn false
+                 :prune-nils false
+                 :denormalize-map false))))
