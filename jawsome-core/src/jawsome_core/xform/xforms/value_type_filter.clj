@@ -8,7 +8,7 @@
 
 (def type=>satisfies-type?
   {:number number?
-   :boolean #(or (= true %) (= false %))
+   :boolean #(or (true? %) (false? %))
    :string string?
    :array #(or (vector? %) (list? %) (set? %))
    :map map?})

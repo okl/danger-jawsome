@@ -2,7 +2,11 @@
   {:author "Alex Bahouth"
    :date "11/10/2013"}
   (:require [cheshire.core :refer [parse-string]])
-  (:require [jawsome-core.reader.json.xform]))
+  (:require [jawsome-core.common-utils :refer [defregistry]])
+  (:require [jawsome-core.reader.json.xforms.unicode :refer [unicode-recode]]
+            [jawsome-core.reader.json.xforms.cruft :refer [remove-cruft]])
+  (:require [roxxi.utils.print :refer [print-expr
+                                       print-expr-hella-rec]]))
 
 ;; Just rebind these to cheshire directly. No need to improve upon something that's great.
 
@@ -14,9 +18,15 @@
 (defn make-json-reader [& {:keys [pre-xform key-fn array-coerce-fn]}]
   (let [parser (fn cheshire-parser [s]
                  (parse-string s key-fn array-coerce-fn))]
-    (if pre-read-xform
+    (if pre-xform
       (reify JsonReader
         (read-str [_ string]
           (map parser (pre-xform string))))
-      (reify JsonReader [_ string]
-        (parser string)))))
+      (reify JsonReader
+        (read-str [_ string]
+          (parser string))))))
+
+
+(defregistry xform-registry
+  '(remove-cruft
+    unicode-recode))

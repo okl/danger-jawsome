@@ -1,7 +1,8 @@
 (ns jawsome-core.reader.json.xforms.cruft
   {:author "Alex Bahouth"
    :date "11/14/2013"}
-  (:require [clojure.tools.logging :as log]))
+  (:require [clojure.tools.logging :as log])
+  (:require [roxxi.utils.common :refer [def-]]))
 
 ;; # Criteria for lines we even want to try to read from a file.
 
@@ -22,10 +23,10 @@
   (let [end-pos (- (count line) 1)]
     (not (= (get line end-pos) \}))))
 
-(def msg
+(def- msg
 "This line seems to be garbage, doesn't start with '{', or end with '}':")
 
-(defn- remove-extraenous-line-markup [line]
+(defn- remove-extraneous-line-markup [line]
   (if (or (line-starts-with-garbage? line)
           (line-ends-with-garbage? line))
     (let [the-line-less-garbage (re-find #"\{.*\}" line)]
@@ -71,9 +72,9 @@
     ""))
 
 
-(def remove-cruft-fn
+(def- remove-cruft-fn
   ;; Order matters! We should remove comments first!
-  (comp (empty-string-trap remove-extraenous-line-markup)
+  (comp (empty-string-trap remove-extraneous-line-markup)
         remove-single-line-comments
         remove-unacceptable-line))
 

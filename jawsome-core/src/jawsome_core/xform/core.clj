@@ -2,6 +2,7 @@
   {:author "Alex Bahouth"
    :date "11/10/2013"}
   (:require [roxxi.utils.print :refer [print-expr]])
+  (:require [jawsome-core.common-utils :refer [defregistry]])
   (:require [denormal.core :refer [denormalize-map]])
   (:use jawsome-core.xform.xforms.property-mapping
         jawsome-core.xform.xforms.pruning
@@ -93,3 +94,14 @@ function constructors"
   "Create a Transform which applies each Transform in order from left to right"
   [& xforms]
   (make-composite-xform xforms))
+
+
+(defregistry xform-registry
+  '(prune-nils
+    reify-values
+    make-property-remapper
+    make-value-type-filter
+    make-value-synonymizer
+    static-value-merge-fn
+    default-value-merge-fn
+    denormalize-map))
