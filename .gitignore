@@ -8,6 +8,8 @@ pom.xml
 /targets/
 .lein-deps-sum
 */.nrepl*
+.lein*
+*/.lein*
 
 # Phabricator
 .arcrc
