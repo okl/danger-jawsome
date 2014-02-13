@@ -7,55 +7,64 @@
             [jawsome-core.xform.core :as x]
             [roxxi.utils.print :refer [print-expr]]))
 
-(def j "{\"referer\": \"http://a.tellapart.com/ai?d=160x600&nid=b43399ef-0e07-40bf-be61-dda86b726b17&pn=&dcu=aHR0cDovL29uZWtpbmdzbGFuZS5jb20=&n=Gh2CZpEnxTmu&openxid=8567a8e6-3059-4bc9-8e64-ef1665b3716a&as=rt&bm=MQvTZrFduqGP&oms=ABJeb19Ri1q2CRTAjdgBQsr2Gt4ViNLfeCEKnI7yEfXejcLFguDACZ-3DrvWr9V-Rh7uOumofkaV&openxp=AAABPyVaCuBAF8VMzQWxR4j5foifEX3ja7OdWw&cu=http://ox-d.monetizationservices.servedbyopenx.com/w/1.0/rc?ts=1fHJhaWQ9ODZxMzcwNzIxMjI1fG1tZj00Mzc1fHBpPTUwOTZ8bXJjPVNSVF9XT058cHI9NTA5Ng&r=&uid=Uid(valid=True,%20encoded=u'ABJeb1_WRM36tja2lqd-KkibOHkdSECL48tO34UnNkbzLTW3-3_5nb6fz5RPDmxr97rjE4XPHDHoa0830fN6bT4xGXfIqO3f6g',%20decoded='\\xaaf\\xbd\\x10]\\xc1\\x1d\\xa0\\x111\\xbf\\x9b\\xe0\\xb0\\x0f\\x15')\"}")
-
+(def j "{\"referer\": \"http://a.tellapart.com/ai?d=160x600&nid=b433O34UnNkbzLTW3-3_5nb6fz5RPDmxr97rjE4XPHDHoa0830fN6bT4xGXfIqO3f6g',%20decoded='\\xaaf\\xbd\\x10]\\xc1\\x1d\\xa0\\x111\\xbf\\x9b\\xe0\\xb0\\x0f\\x15')\"}")
+(def k "{\"num\": 1, \"num_as_str\": \"2\", \"str_prop\": \"this is a str\", \"bool_prop_1\": true, \"bool_prop_2\": \"this is not a bool\", \"array_prop\": [1, 2, 3], \"syn_prop\": \"-\"}")
 
 (def ^:dynamic *registry* nil)
 (defmacro with-registry [r & body]
   `(binding [*registry* ~r]
      ~@body))
 
-
 (definterpreter pipeline-interp []
   ['pipeline => :pipeline]
   ['read-phase => :read-phase]
   ['xform-phase => :xform-phase]
-  ['convert-format-phase => :convert-format-phase] ;gather-schema-and-convert-to-csv-or-other-form phase
+  ['project-phase => :project-phase]
   ['xforms => :xforms]
   ['xform => :xform]
 )
 
+;;TODO
+;; this assumes that the first one is read,
+;; second one is xform,
+;; etc.
 (defmethod pipeline-interp :pipeline [[_ & steps]]
-  (doall (map pipeline-interp steps)))
+  (let [phase-level-xforms (map pipeline-interp steps)
+        read (first phase-level-xforms)
+        xform (second phase-level-xforms)
+        ;;composed-xform (apply comp phase-level-xforms)
+        ]
+    #(map xform (read %))
+    ;; (print-expr (read j))
+    ;; (print-expr (read k))
+    ;; (print-expr (map xform (read k)))
+    ;; (print-expr (read j))
+    ;; (print-expr (map xform (read j)))
+    ;;(print-expr (composed-xform k))
+    ))
 
 (defmethod pipeline-interp :read-phase [[_ xforms]]
-  (do
-    (println "Read cfg is" xforms)
-    (with-registry r/xform-registry
-      (let [xform (pipeline-interp xforms)
-            composed-xform (comp list xform)
-            json-reader (r/make-json-reader :pre-xform composed-xform)]
-        (println "j parses to" (r/read-str json-reader j))
-        ))))
+  (with-registry r/xform-registry
+    (let [xform (pipeline-interp xforms)
+          composed-xform (comp list xform)
+          json-reader (r/make-json-reader :pre-xform composed-xform)]
+      #(r/read-str json-reader %))))
 (defmethod pipeline-interp :xform-phase [[_ xforms]]
-  (do
-    (println "Xform cfg is" xforms)
-    (with-registry x/xform-registry
-      (let [xform (pipeline-interp xforms)]
-        (println "this is the result of calling pipeline xform on j:"
-                 (xform j))))))
-(defmethod pipeline-interp :convert-format-phase [[_ & convert-cfg]]
-  (do
-    (println "Convert-format cfg is" convert-cfg)))
+  (with-registry x/xform-registry
+    (pipeline-interp xforms)))
+(defmethod pipeline-interp :project-phase [[_ & project-cfg]]
+  (println "Project-format cfg is" project-cfg))
 
 (defmethod pipeline-interp :xforms [[_ & xforms]]
+  "Returns a single function, which is the composition of
+all the xforms (with their arguments) in the order specified"
   (let [partitioned (partition-by keyword? xforms)
         xform*enabled?*args (map #(apply concat %) (partition 2 partitioned))
         parseable-xforms (map #(list 'xform %) xform*enabled?*args)
         xforms (if (empty? parseable-xforms)
                  [identity]
                  (map pipeline-interp parseable-xforms))]
-    (apply comp xforms)))
+    (apply comp (reverse xforms))))
 
 (defn- enabled? [xform]
   (true? (second xform)))
@@ -72,19 +81,67 @@
       identity)))
 
 
+(def pipeline
+  (pipeline-interp
+   '(pipeline
+     (read-phase (xforms
+                  :remove-cruft true
+                  :unicode-recode true))
+     (xform-phase (xforms
+                   :property-remapper true {"num" "renamed_field!"}
+                   :reify-values true
+                   :global-synonymizer true {"-" nil}
+                   :value-type-filter true {["bool_prop_1"] :boolean
+                                            ["bool_prop_2"] :boolean}
+                   :static-value-merge false {"syn_prop" 42}
+                   :default-value-merge true {"syn_prop" 45
+                                              "test_prop" 48}
+                   :denormalize-map false
+                   :prune-nils false)))))
 
-(pipeline-interp
- '(pipeline
-   (read-phase (xforms
-                :unicode-recode true
-                :remove-cruft true
-                ))
-   (xform-phase (xforms
-                 :reify-values false
-                 :make-property-remapper false
-                 :make-value-type-filter false
-                 :make-value-synonymizer false
-                 :static-value-merge-fn false
-                 :default-value-merge-fn false
-                 :prune-nils false
-                 :denormalize-map false))))
+
+(defn -main []
+  (doseq [line (line-seq (java.io.BufferedReader. *in*))]
+    ;;The inner doall is because a single record of input produces
+    ;; a (lazy) sequence of records of output.
+    (doall
+     (map println (pipeline line)))))
+
+
+;; 1. add pre, mid, post, etc custom transforms
+;; 2. implement the rest of the xform-phase xform-registry
+;; 3. Q: is the Xform signature REALLY this?
+;;           json-map => [json-map]
+;;    A: yes!
+;; 4. at some point, need to implement the project-phase
+;; 5. ...separate config interpreter from pipeline builder...  <.<   >.>   <.<
+;; 6. make bindings for std-in / std-out
+;;        i.e. turn -main into a cli wrapper
+
+
+
+
+;; (defregistry xform-registry
+;;   '(
+;;     ;;hoist goes here
+;;     property-remapper ;;one arg -- map of what to rename. see reassoc-many. can it take paths?
+;;     ;;pre
+;;     reify-values ;;no args
+;;     global-synonymizer ; one arg -- value=>synonym
+;;     ;;path-specific-synonymizer goes here
+;;     value-type-filter ;; one arg -- path=>type
+;;     ;;mid
+;;     denormalize-map
+;;     ;;post
+;;     prune-nils ;;no args
+
+
+;;     ;;things that are library, not ordered:
+;;     ;; - prune-paths
+;;     ;; - only
+;;     ;; - remove
+;;     ;; - drop-if-particular-kv-occurs (e.g. path='/server-status?auto')
+;;     ;; - drop-if-had-to-type-enforce
+;;     static-value-merge-fn ;;one arg -- map of what to force-insert
+;;     default-value-merge-fn ;;one arg -- map of what to insert if not present
+;;     ))

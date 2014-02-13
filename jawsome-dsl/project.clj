@@ -6,4 +6,5 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [com.onekingslane.danger/diesel "1.0.1"]
                  [com.onekingslane.danger/clojure-common-utils "0.0.21"]
-                 [com.onekingslane.danger/jawsome-core "0.1.1-SNAPSHOT"]])
+                 [com.onekingslane.danger/jawsome-core "0.1.1-SNAPSHOT"]]
+  :main jawsome-dsl.core)
