@@ -5,87 +5,127 @@
   (:require [diesel.core :refer [definterpreter]]
             [jawsome-core.reader.json.core :as r]
             [jawsome-core.xform.core :as x]
+            [jawsome-dsl.separate-phases :refer [separate-phases]]
             [roxxi.utils.print :refer [print-expr]]))
 
-(def j "{\"referer\": \"http://a.tellapart.com/ai?d=160x600&nid=b43399ef-0e07-40bf-be61-dda86b726b17&pn=&dcu=aHR0cDovL29uZWtpbmdzbGFuZS5jb20=&n=Gh2CZpEnxTmu&openxid=8567a8e6-3059-4bc9-8e64-ef1665b3716a&as=rt&bm=MQvTZrFduqGP&oms=ABJeb19Ri1q2CRTAjdgBQsr2Gt4ViNLfeCEKnI7yEfXejcLFguDACZ-3DrvWr9V-Rh7uOumofkaV&openxp=AAABPyVaCuBAF8VMzQWxR4j5foifEX3ja7OdWw&cu=http://ox-d.monetizationservices.servedbyopenx.com/w/1.0/rc?ts=1fHJhaWQ9ODZxMzcwNzIxMjI1fG1tZj00Mzc1fHBpPTUwOTZ8bXJjPVNSVF9XT058cHI9NTA5Ng&r=&uid=Uid(valid=True,%20encoded=u'ABJeb1_WRM36tja2lqd-KkibOHkdSECL48tO34UnNkbzLTW3-3_5nb6fz5RPDmxr97rjE4XPHDHoa0830fN6bT4xGXfIqO3f6g',%20decoded='\\xaaf\\xbd\\x10]\\xc1\\x1d\\xa0\\x111\\xbf\\x9b\\xe0\\xb0\\x0f\\x15')\"}")
+(def j "{\"referer\": \"http://a.tellapart.com/ai?d=160x600&nid=b433O34UnNkbzLTW3-3_5nb6fz5RPDmxr97rjE4XPHDHoa0830fN6bT4xGXfIqO3f6g',%20decoded='\\xaaf\\xbd\\x10]\\xc1\\x1d\\xa0\\x111\\xbf\\x9b\\xe0\\xb0\\x0f\\x15')\"}")
+(def k "{\"num\": 1, \"num_as_str\": \"2\", \"str_prop\": \"this is a str\", \"bool_prop_1\": true, \"bool_prop_2\": \"this is not a bool\", \"array_prop\": [1, 2, 3], \"syn_prop\": \"-\"}")
+(def l {"okl_params" {"hoist1" "foo" "hoist2" "bar"}
+        "okl_experiment" {"hoist3" "baz"}
+        "X-Okl-Params" {"hoist4" "foo" "hoist5" "bar"}
+        "X-Okl-Experiment" {"hoist6" "baz"}
+        "shouldn't get hoisted" {"hoist7" "quux"}})
 
-(defn- valid-xform? [[keyword options] registry]
-  (contains? registry (symbol (name keyword))))
-
-(defn- keyword-to-xform [[keyword options] registry]
-  (list (get registry (symbol (name keyword)))
-        options))
-
-(defn- lookup-xforms-in-registry [good-pairs registry]
-  (map #(keyword-to-xform % registry) good-pairs))
-
-(defn- functionify-xforms [cfg registry]
-  (let [xform-option-pairs (partition 2 cfg)
-        enabled-pairs (filter second xform-option-pairs)
-        bad-pairs (remove #(valid-xform? % registry) enabled-pairs)
-        good-pairs (filter #(valid-xform? % registry) enabled-pairs)
-        bad-names (map first bad-pairs)
-        looked-up-good-pairs (lookup-xforms-in-registry good-pairs registry)]
-    [looked-up-good-pairs
-     bad-names]))
-
-(definterpreter read-interp []
-  ['xforms => :xforms])
-(defmethod read-interp :xforms [[_ & read-cfg]]
-  (let [[good-pairs bad-names] (functionify-xforms read-cfg r/xform-registry)
-        xforms (map first good-pairs)
-        composed-xform (apply comp (list* list xforms))]
-    (if (empty? bad-names)
-      (let [json-reader (r/make-json-reader :pre-xform composed-xform)]
-        (println "j parses to" (r/read-str json-reader j)))
-      (println "unrecognized transforms: " bad-names)
-      )))
-
-(definterpreter xform-interp []
-  ['xforms => :xforms])
-(defmethod xform-interp :xforms [[_ & xform-cfg]]
-  (let [[good-pairs bad-names] (functionify-xforms xform-cfg x/xform-registry)
-        ;; composed-xform (apply comp xforms)
-        ]
-    (print-expr good-pairs)
-    (print-expr bad-names)))
-
+(def ^:dynamic *registry* nil)
+(defmacro with-registry [r & body]
+  `(binding [*registry* ~r]
+     ~@body))
 
 (definterpreter pipeline-interp []
   ['pipeline => :pipeline]
-  ['read => :read]
-  ['xform => :xform]
-  ['convert-format => :convert-format] ;gather-schema-and-convert-to-csv-or-other-form phase
-)
+  ['read-phase => :read-phase]
+  ['xform-phase => :xform-phase]
+  ['project-phase => :project-phase]
+  ['xforms => :xforms]
+  ['xform => :xform])
 
-(defmethod pipeline-interp :pipeline [[_ & steps]]
-  (doall (map pipeline-interp steps)))
+(defmethod pipeline-interp :pipeline [[_ & phases]]
+  (let [[read xform project] (separate-phases phases)
+        read-fn (if read
+                  (pipeline-interp read)
+                  list)
+        xform-fn (pipeline-interp xform)
+        project-fn (if project
+                     (pipeline-interp project)
+                     nil)]
+    (if project-fn
+      #(println "need to gather schema after the read phase, then project")
+      #(map xform-fn (read-fn %)))))
 
-(defmethod pipeline-interp :read [[_ xforms]]
-  (do
-    (println "Read cfg is" xforms)
-    (read-interp xforms)))
-(defmethod pipeline-interp :xform [[_ xforms]]
-  (do
-    (println "Xform cfg is" xforms)
-    (xform-interp xforms)))
-(defmethod pipeline-interp :convert-format [[_ & convert-cfg]]
-  (do
-    (println "Convert-format cfg is" convert-cfg)))
+(defmethod pipeline-interp :read-phase [[_ xforms]]
+  (with-registry r/xform-registry
+    (let [xform (pipeline-interp xforms)
+          composed-xform (comp list xform)
+          json-reader (r/make-json-reader :pre-xform composed-xform)]
+      #(r/read-str json-reader %))))
+
+(defmethod pipeline-interp :xform-phase [[_ xforms]]
+  (with-registry x/xform-registry
+    (pipeline-interp xforms)))
+
+(defmethod pipeline-interp :project-phase [[_ & project-cfg]]
+  (println "Project-format cfg is" project-cfg))
+
+(defmethod pipeline-interp :xforms [[_ & xforms]]
+  "Returns a single function, which is the composition of
+all the xforms (with their arguments) in the order specified"
+  (let [partitioned (partition-by keyword? xforms)
+        xform*enabled?*args (map #(apply concat %) (partition 2 partitioned))
+        parseable-xforms (map #(list 'xform %) xform*enabled?*args)
+        xforms (if (empty? parseable-xforms)
+                 [identity]
+                 (map pipeline-interp parseable-xforms))]
+    (apply comp (reverse xforms))))
+
+(defn- enabled? [xform]
+  (true? (second xform)))
+(defn- keyword-to-xform [keyword registry]
+  (get registry (symbol (name keyword))))
+(defmethod pipeline-interp :xform [[_ xform]]
+  (if (enabled? xform)
+    (let [k (first xform)
+          fxn (keyword-to-xform k *registry*)
+          args (drop 2 xform)]
+      #(apply fxn (conj args %)))
+    (do
+      (println "xform is disabled, skipping it:" xform)
+      identity)))
 
 
-(pipeline-interp
- '(pipeline
-   (read (xforms
-          :unicode-recode true
-          :remove-cruft true))
-   (xform (xforms
-           :reify-values true
-           :make-property-remapper false
-           :make-value-type-filter false
-           :make-value-synonymizer false
-           :static-value-merge-fn false
-           :default-value-merge-fn false
-           :prune-nils true
-           :denormalize-map false))
-   ))
+(def pipeline
+  (pipeline-interp
+   '(pipeline
+     ;; (read-phase (xforms
+     ;;              :remove-cruft true
+     ;;              :unicode-recode true))
+     (xform-phase (xforms
+                   :hoist true [{:properties ["okl_params" "X-Okl-Params"]
+                                 :type "hoist-once-for-property"}
+                                {:properties ["okl_experiment" "X-Okl-Experiment"]
+                                 :type "hoist-once-for-property"
+                                 :prefix "exp_"
+                                 :suffix "_test"}]
+                   :property-remapper true {"num" "renamed_field!"}
+                   :reify-values true
+                   :global-synonymizer true {"-" nil}
+                   :value-type-filter true {["bool_prop_1"] :boolean
+                                            ["bool_prop_2"] :boolean}
+                   :static-value-merge false {"syn_prop" 42}
+                   :default-value-merge true {"syn_prop" 45
+                                              "test_prop" 48}
+                   :denormalize-map false
+                   :prune-nils false)))))
+
+
+
+(defn -main []
+  (doseq [line (line-seq (java.io.BufferedReader. *in*))]
+    ;;The inner doall is because a single record of input produces
+    ;; a (lazy) sequence of records of output.
+    (doall
+     (map println (pipeline line)))))
+
+
+;; 0. Make the order of the ordered ones not depend on
+;;        the order they're specified in
+;;      This is jawsome-pipeline (?)
+;;      This is where custom xforms are specified?
+;; 1. add pre, mid, post, etc custom transforms
+;; 2. implement the rest of the xform-phase xform-registry
+;; 3. Q: is the Xform signature REALLY this?
+;;           json-map => [json-map]
+;;    A: yes!
+;; 4. at some point, need to implement the project-phase
+;; 5. ...separate config interpreter from pipeline builder...  <.<   >.>   <.<
+;; 6. make bindings for std-in / std-out
+;;        i.e. turn -main into a cli wrapper
