@@ -14,7 +14,6 @@ we view the life cycle of JSON as such:
 2. Requires raw text processing in order to make it "readable"
 3. Requires manipulation to ensure records are consistent
 4. Needs to have a schema defined for the collection
-5.
 
 
 #### Raw text cleanup
@@ -142,7 +141,7 @@ return json map every step of the way.
 8. Property Name Hoisting
 -- Post denorm
 8. Property Name special character handling -- move out?
-sh
+
 
 
 ## License

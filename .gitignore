@@ -4,8 +4,10 @@ pom.xml
 *jar
 /lib/
 /classes/
+*/target/
 /targets/
 .lein-deps-sum
+*/.nrepl*
 
 # Phabricator
 .arcrc
