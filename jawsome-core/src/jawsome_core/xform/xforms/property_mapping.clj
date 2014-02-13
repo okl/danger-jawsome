@@ -19,3 +19,5 @@ Property Remapping Configuraton is as defined in
   [property-remapping]
   (fn remap-properties [m]
     (reassoc-many m property-remapping)))
+
+(def property-remapper reassoc-many)

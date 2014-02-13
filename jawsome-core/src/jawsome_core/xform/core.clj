@@ -5,7 +5,8 @@
   (:require [roxxi.utils.collections :refer [reassoc-many]])
   (:require [jawsome-core.common-utils :refer [defregistry]])
   (:require [denormal.core :refer [denormalize-map]])
-  (:use jawsome-core.xform.xforms.property-mapping
+  (:use jawsome-core.xform.xforms.hoist
+        jawsome-core.xform.xforms.property-mapping
         jawsome-core.xform.xforms.pruning
         jawsome-core.xform.xforms.reify-values
         jawsome-core.xform.xforms.static-injection
@@ -96,11 +97,9 @@ function constructors"
   [& xforms]
   (make-composite-xform xforms))
 
-(def property-remapper reassoc-many)
-
 (defregistry xform-registry
   '(
-    ;;hoist goes here
+    ;;hoist
     property-remapper ;;one arg -- map of what to rename. see reassoc-many. can it take paths?
     ;;pre
     reify-values ;;no args
@@ -120,4 +119,6 @@ function constructors"
     ;; - drop-if-had-to-type-enforce
     static-value-merge ;;one arg -- map of what to force-insert
     default-value-merge ;;one arg -- map of what to insert if not present
+    ;;it is worth remarking that the 'default ordered xforms'
+    ;; can also be treated as library, of course.
     ))

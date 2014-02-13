@@ -10,6 +10,11 @@
 
 (def j "{\"referer\": \"http://a.tellapart.com/ai?d=160x600&nid=b433O34UnNkbzLTW3-3_5nb6fz5RPDmxr97rjE4XPHDHoa0830fN6bT4xGXfIqO3f6g',%20decoded='\\xaaf\\xbd\\x10]\\xc1\\x1d\\xa0\\x111\\xbf\\x9b\\xe0\\xb0\\x0f\\x15')\"}")
 (def k "{\"num\": 1, \"num_as_str\": \"2\", \"str_prop\": \"this is a str\", \"bool_prop_1\": true, \"bool_prop_2\": \"this is not a bool\", \"array_prop\": [1, 2, 3], \"syn_prop\": \"-\"}")
+(def l {"okl_params" {"hoist1" "foo" "hoist2" "bar"}
+        "okl_experiment" {"hoist3" "baz"}
+        "X-Okl-Params" {"hoist4" "foo" "hoist5" "bar"}
+        "X-Okl-Experiment" {"hoist6" "baz"}
+        "shouldn't get hoisted" {"hoist7" "quux"}})
 
 (def ^:dynamic *registry* nil)
 (defmacro with-registry [r & body]
@@ -80,10 +85,16 @@ all the xforms (with their arguments) in the order specified"
 (def pipeline
   (pipeline-interp
    '(pipeline
-     (read-phase (xforms
-                  :remove-cruft true
-                  :unicode-recode true))
+     ;; (read-phase (xforms
+     ;;              :remove-cruft true
+     ;;              :unicode-recode true))
      (xform-phase (xforms
+                   :hoist true [{:properties ["okl_params" "X-Okl-Params"]
+                                 :type "hoist-once-for-property"}
+                                {:properties ["okl_experiment" "X-Okl-Experiment"]
+                                 :type "hoist-once-for-property"
+                                 :prefix "exp_"
+                                 :suffix "_test"}]
                    :property-remapper true {"num" "renamed_field!"}
                    :reify-values true
                    :global-synonymizer true {"-" nil}
@@ -94,6 +105,7 @@ all the xforms (with their arguments) in the order specified"
                                               "test_prop" 48}
                    :denormalize-map false
                    :prune-nils false)))))
+
 
 
 (defn -main []
