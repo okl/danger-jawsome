@@ -2,6 +2,7 @@
   {:author "Alex Bahouth"
    :date "11/10/2013"}
   (:require [roxxi.utils.print :refer [print-expr]])
+  (:require [roxxi.utils.collections :refer [reassoc-many]])
   (:require [jawsome-core.common-utils :refer [defregistry]])
   (:require [denormal.core :refer [denormalize-map]])
   (:use jawsome-core.xform.xforms.property-mapping
@@ -95,13 +96,28 @@ function constructors"
   [& xforms]
   (make-composite-xform xforms))
 
+(def property-remapper reassoc-many)
 
 (defregistry xform-registry
-  '(prune-nils
-    reify-values
-    make-property-remapper
-    make-value-type-filter
-    make-value-synonymizer
-    static-value-merge-fn
-    default-value-merge-fn
-    denormalize-map))
+  '(
+    ;;hoist goes here
+    property-remapper ;;one arg -- map of what to rename. see reassoc-many. can it take paths?
+    ;;pre
+    reify-values ;;no args
+    global-synonymizer ; one arg -- value=>synonym
+    ;;path-specific-synonymizer goes here
+    value-type-filter ;; one arg -- path=>type
+    ;;mid
+    denormalize-map
+    ;;post
+    prune-nils ;;no args
+
+    ;;things that are library, not ordered:
+    ;; - prune-paths
+    ;; - only
+    ;; - remove
+    ;; - drop-if-particular-kv-occurs (e.g. path='/server-status?auto')
+    ;; - drop-if-had-to-type-enforce
+    static-value-merge ;;one arg -- map of what to force-insert
+    default-value-merge ;;one arg -- map of what to insert if not present
+    ))
