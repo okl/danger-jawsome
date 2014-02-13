@@ -17,6 +17,8 @@ This is useful when you have a synonym mapping like:
       (get value=>synonym current-value)
       current-value)))
 
+(defn global-synonymizer [json-map value=>synonym]
+  (walk-update-scalars json-map (make-negative-safe-lookup-fn value=>synonym)))
+
 (defn make-value-synonymizer [value=>synonym]
-  (fn [m]
-    (walk-update-scalars m (make-negative-safe-lookup-fn value=>synonym))))
+  #(global-synonymizer % value=>synonym))
