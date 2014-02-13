@@ -5,6 +5,7 @@
   (:require [diesel.core :refer [definterpreter]]
             [jawsome-core.reader.json.core :as r]
             [jawsome-core.xform.core :as x]
+            [jawsome-dsl.separate-phases :refer [separate-phases]]
             [roxxi.utils.print :refer [print-expr]]))
 
 (def j "{\"referer\": \"http://a.tellapart.com/ai?d=160x600&nid=b433O34UnNkbzLTW3-3_5nb6fz5RPDmxr97rjE4XPHDHoa0830fN6bT4xGXfIqO3f6g',%20decoded='\\xaaf\\xbd\\x10]\\xc1\\x1d\\xa0\\x111\\xbf\\x9b\\xe0\\xb0\\x0f\\x15')\"}")
@@ -21,27 +22,20 @@
   ['xform-phase => :xform-phase]
   ['project-phase => :project-phase]
   ['xforms => :xforms]
-  ['xform => :xform]
-)
+  ['xform => :xform])
 
-;;TODO
-;; this assumes that the first one is read,
-;; second one is xform,
-;; etc.
-(defmethod pipeline-interp :pipeline [[_ & steps]]
-  (let [phase-level-xforms (map pipeline-interp steps)
-        read (first phase-level-xforms)
-        xform (second phase-level-xforms)
-        ;;composed-xform (apply comp phase-level-xforms)
-        ]
-    #(map xform (read %))
-    ;; (print-expr (read j))
-    ;; (print-expr (read k))
-    ;; (print-expr (map xform (read k)))
-    ;; (print-expr (read j))
-    ;; (print-expr (map xform (read j)))
-    ;;(print-expr (composed-xform k))
-    ))
+(defmethod pipeline-interp :pipeline [[_ & phases]]
+  (let [[read xform project] (separate-phases phases)
+        read-fn (if read
+                  (pipeline-interp read)
+                  list)
+        xform-fn (pipeline-interp xform)
+        project-fn (if project
+                     (pipeline-interp project)
+                     nil)]
+    (if project-fn
+      #(println "need to gather schema after the read phase, then project")
+      #(map xform-fn (read-fn %)))))
 
 (defmethod pipeline-interp :read-phase [[_ xforms]]
   (with-registry r/xform-registry
@@ -49,9 +43,11 @@
           composed-xform (comp list xform)
           json-reader (r/make-json-reader :pre-xform composed-xform)]
       #(r/read-str json-reader %))))
+
 (defmethod pipeline-interp :xform-phase [[_ xforms]]
   (with-registry x/xform-registry
     (pipeline-interp xforms)))
+
 (defmethod pipeline-interp :project-phase [[_ & project-cfg]]
   (println "Project-format cfg is" project-cfg))
 
@@ -108,6 +104,10 @@ all the xforms (with their arguments) in the order specified"
      (map println (pipeline line)))))
 
 
+;; 0. Make the order of the ordered ones not depend on
+;;        the order they're specified in
+;;      This is jawsome-pipeline (?)
+;;      This is where custom xforms are specified?
 ;; 1. add pre, mid, post, etc custom transforms
 ;; 2. implement the rest of the xform-phase xform-registry
 ;; 3. Q: is the Xform signature REALLY this?
@@ -117,31 +117,3 @@ all the xforms (with their arguments) in the order specified"
 ;; 5. ...separate config interpreter from pipeline builder...  <.<   >.>   <.<
 ;; 6. make bindings for std-in / std-out
 ;;        i.e. turn -main into a cli wrapper
-
-
-
-
-;; (defregistry xform-registry
-;;   '(
-;;     ;;hoist goes here
-;;     property-remapper ;;one arg -- map of what to rename. see reassoc-many. can it take paths?
-;;     ;;pre
-;;     reify-values ;;no args
-;;     global-synonymizer ; one arg -- value=>synonym
-;;     ;;path-specific-synonymizer goes here
-;;     value-type-filter ;; one arg -- path=>type
-;;     ;;mid
-;;     denormalize-map
-;;     ;;post
-;;     prune-nils ;;no args
-
-
-;;     ;;things that are library, not ordered:
-;;     ;; - prune-paths
-;;     ;; - only
-;;     ;; - remove
-;;     ;; - drop-if-particular-kv-occurs (e.g. path='/server-status?auto')
-;;     ;; - drop-if-had-to-type-enforce
-;;     static-value-merge-fn ;;one arg -- map of what to force-insert
-;;     default-value-merge-fn ;;one arg -- map of what to insert if not present
-;;     ))
