@@ -38,6 +38,7 @@
 
 (def hack-the-middle [foo]
   (sku-color-xform-pt-2 (shawns-fn (sku-color-xform foo))))
+;; call first in shawn's function
 
 
 
