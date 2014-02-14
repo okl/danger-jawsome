@@ -101,6 +101,7 @@ all the xforms (with their arguments) in the order specified"
                    :value-type-filter true {["bool_prop_1"] :boolean
                                             ["bool_prop_2"] :boolean}
                    :static-value-merge false {"syn_prop" 42}
+                   :static-value-merge true {"additional_prop" 4422}
                    :default-value-merge true {"syn_prop" 45
                                               "test_prop" 48}
                    :denormalize-map false

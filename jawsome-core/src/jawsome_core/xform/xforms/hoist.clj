@@ -1,6 +1,7 @@
 (ns jawsome-core.xform.xforms.hoist
+  "Implements xform pipeline step: Hoist"
   {:author "Matt Halverson"
-   :date "11/10/2013"}
+   :date "2/13/2014"}
   (:require [roxxi.utils.print :refer [print-expr]])
   (:require [roxxi.utils.collections :refer [dissoc-in
                                              project-map]]))
@@ -46,25 +47,3 @@
     (reduce #(prepare-one-hoist %1 %2)
             json-map
             hoist-cfgs)))
-
-
-;; (def test-map {:a {:b 2 :c 3},
-;;                :f {:g 7 :h 8},
-;;                :m {:n 14 :o 15},
-;;                :w {:x 24 :y 25}})
-;; (hoist test-map
-;;        [{:properties [:a]
-;;          :type "hoist-once-for-property"
-;;          :prefix "pre_"}
-;;         {:properties [:f]
-;;          :type "hoist-once-for-property"
-;;          :suffix "_post"}])
-
-;; (hoist test-map
-;;        [{:properties [:a :f]
-;;          :type "hoist-once-for-property"
-;;          :prefix "pre_"}
-;;         {:properties [:m]
-;;          :type "hoist-once-for-property"
-;;          :prefix "pre!"
-;;          :suffix "!post"}])
