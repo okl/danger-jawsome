@@ -2,8 +2,11 @@
   "Implements xform pipeline step: Value Synonym Mapping"
   {:author "Alex Bahouth"
    :date "11/10/2013"}
-  (:require [roxxi.utils.collections :refer [walk-update-scalars]]))
+  (:require [roxxi.utils.collections :refer [walk-update-scalars]])
+  (:require [roxxi.utils.common :refer [def-]]))
 
+
+;; # Global synonymization
 
 (defn- make-negative-safe-lookup-fn
   "In the case where a key-value pair might yield a negative value,
@@ -22,3 +25,39 @@ This is useful when you have a synonym mapping like:
 
 (defn make-value-synonymizer [value=>synonym]
   #(global-synonymizer % value=>synonym))
+
+
+;; # Path-specific synonymization
+
+(defn- contains-path? [map path]
+  (cond
+   (empty? path)
+   true
+   :else
+   (let [top-level-prop (first path)]
+     (and (map? map)
+          (contains? map top-level-prop)
+          (contains-path? (get map top-level-prop)
+                          (rest path))))))
+
+(defn- translate-syn [json-map [path syns]]
+  (let [old-val (get-in json-map path)
+        path-matches? (contains-path? json-map path)
+        needs-to-be-translated? (contains? syns old-val)]
+    (if (and path-matches? needs-to-be-translated?)
+      (assoc-in json-map path (get syns old-val))
+      json-map)))
+
+(defn- make-path=>syns [default-syns path=>extra-syns]
+  (into {}
+        (map
+         (fn [[path extra-syns]]
+           (vector path (into default-syns extra-syns)))
+         path=>extra-syns)))
+
+(def- make-path=>syns-memoed
+  (memoize make-path=>syns))
+
+(defn path-specific-synonymizer [json-map default-syns path=>extra-syns]
+  (let [path=>syns (make-path=>syns-memoed default-syns path=>extra-syns)]
+    (reduce translate-syn json-map path=>syns)))

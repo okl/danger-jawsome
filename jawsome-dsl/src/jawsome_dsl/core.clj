@@ -14,7 +14,11 @@
         "okl_experiment" {"hoist3" "baz"}
         "X-Okl-Params" {"hoist4" "foo" "hoist5" "bar"}
         "X-Okl-Experiment" {"hoist6" "baz"}
-        "shouldn't get hoisted" {"hoist7" "quux"}})
+        "shouldn't get hoisted" {"hoist7" "quux"}
+        "denorm_prop" ["a" "b"]})
+(def m {"foo" "nine"
+        "bar" {"sub_bar" "ten"}
+        "baz" "ten"})
 
 (def ^:dynamic *registry* nil)
 (defmacro with-registry [r & body]
@@ -98,6 +102,14 @@ all the xforms (with their arguments) in the order specified"
                    :property-remapper true {"num" "renamed_field!"}
                    :reify-values true
                    :global-synonymizer true {"-" nil}
+                   :path-specific-synonymizer true {"no" false,
+                                                    "yes" true,
+                                                    "false" false,
+                                                    "true" true,
+                                                    0 false,
+                                                    1 true}
+                                                   {["foo"] {"nine" 9 "nueve" 9}
+                                                    ["bar" "sub_bar"] {"ten" "diez"}}
                    :value-type-filter true {["bool_prop_1"] :boolean
                                             ["bool_prop_2"] :boolean}
                    :static-value-merge false {"syn_prop" 42}
@@ -105,7 +117,7 @@ all the xforms (with their arguments) in the order specified"
                    :default-value-merge true {"syn_prop" 45
                                               "test_prop" 48}
                    :denormalize-map false
-                   :prune-nils false)))))
+                   :prune-nils true)))))
 
 
 

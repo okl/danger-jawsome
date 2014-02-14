@@ -102,8 +102,8 @@ function constructors"
     property-remapper ;;one arg -- map of what to rename. see reassoc-many. it can take paths!
     ;;pre
     reify-values ;;no args
-    global-synonymizer ; one arg -- value=>synonym
-    ;;path-specific-synonymizer goes here
+    global-synonymizer ;; one arg -- value=>synonym
+    path-specific-synonymizer ;;
     value-type-filter ;; one arg -- path=>type
     ;;mid
     denormalize-map
