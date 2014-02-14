@@ -36,12 +36,42 @@
       (xforms
        :denormalize-map true)))))
 
-(def hack-the-middle [foo]
-  (sku-color-xform-pt-2 (shawns-fn (sku-color-xform foo))))
+(def sku-color-xform-pt-3
+  (pipeline-interp
+   '(pipeline
+     (xform-phase
+      (xforms
+       :denormalize-map true)))))
+
+
+;;SHOULD WORK!!
+(defn shawns-fn [my-map]
+  (let [first-elem (first my-map)
+        num-colors (count (get-in first-elem ["value",0]))]
+    (print-expr first-elem)
+    {"sku_id" (get first-elem "key")
+     "color_id"
+    (vec
+     (map #(hash-map
+           "color" (get-in first-elem ["value",0,%])
+           "weight" (get-in first-elem ["value",1,%]))
+         (range num-colors))
+     )
+    }
+    ))
+
+;;ORIG
+;; (defn hack-the-middle [foo]
+;;   (sku-color-xform-pt-2 (print-expr (shawns-fn (sku-color-xform foo)))))
+
+;; HACKED
+(defn hack-the-middle [foo]
+   (sku-color-xform-pt-2
+    ;;(shawns-fn2
+     (print-expr (shawns-fn (sku-color-xform (print-expr foo))))))
+   ;;)
+  ;;)
 ;; call first in shawn's function
-
-
-
 
 
 (defn map->xsv [some-map field-order delimiter]
@@ -70,8 +100,8 @@
   (doseq [line (line-seq (java.io.BufferedReader. *in*))]
     ;;The inner doall is because a single record of input produces
     ;; a (lazy) sequence of records of output.
-    (let [record-seq (sku-color-xform line)] ;; <~~ hack the middle
+    (let [record-seq (hack-the-middle line)] ;; <~~ hack the middle
       (doall
        (map println
             (map generate-string
-                  (apply concat records-seq)))))))
+                  (apply concat record-seq)))))))

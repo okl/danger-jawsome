@@ -33,7 +33,7 @@
   (let [[read xform project] (separate-phases phases)
         read-fn (if read
                   (pipeline-interp read)
-                  listify)
+                  list)
         xform-fn (pipeline-interp xform)
         project-fn (if project
                      (pipeline-interp project)
@@ -105,8 +105,6 @@ all the xforms (with their arguments) in the order specified"
                                               "test_prop" 48}
                    :denormalize-map false
                    :prune-nils false)))))
-
-
 
 (defn -main []
   (doseq [line (line-seq (java.io.BufferedReader. *in*))]
