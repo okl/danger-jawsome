@@ -10,6 +10,9 @@
 ;; Just rebind the parsing to cheshire directly.
 ;; No need to improve upon something that's great.
 
+(defprotocol JsonReader
+  (read-str [_ string]
+    "Returns a clojure map representing a json string"))
 
 (defn make-json-reader
   "Returns a function that takes a string and returns a

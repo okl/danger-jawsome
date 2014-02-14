@@ -33,7 +33,7 @@
   (let [[read xform project] (separate-phases phases)
         read-fn (if read
                   (pipeline-interp read)
-                  list)
+                  listify)
         xform-fn (pipeline-interp xform)
         project-fn (if project
                      (pipeline-interp project)
@@ -78,7 +78,7 @@ all the xforms (with their arguments) in the order specified"
           args (drop 2 xform)]
       #(apply fxn (conj args %)))
     (do
-      (println "xform is disabled, skipping it:" xform)
+;;      (println "xform is disabled, skipping it:" xform)
       identity)))
 
 
