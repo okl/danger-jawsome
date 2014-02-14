@@ -98,9 +98,8 @@ function constructors"
   (make-composite-xform xforms))
 
 (defregistry xform-registry
-  '(
-    ;;hoist
-    property-remapper ;;one arg -- map of what to rename. see reassoc-many. can it take paths?
+  '(hoist
+    property-remapper ;;one arg -- map of what to rename. see reassoc-many. it can take paths!
     ;;pre
     reify-values ;;no args
     global-synonymizer ; one arg -- value=>synonym

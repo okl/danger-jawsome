@@ -129,3 +129,4 @@ all the xforms (with their arguments) in the order specified"
 ;; 5. ...separate config interpreter from pipeline builder...  <.<   >.>   <.<
 ;; 6. make bindings for std-in / std-out
 ;;        i.e. turn -main into a cli wrapper
+;; 7. log, not print
