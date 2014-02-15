@@ -8,12 +8,12 @@
             [jawsome-dsl.separate-phases :refer [separate-phases]]
             [roxxi.utils.print :refer [print-expr]]))
 
-(def j "{\"referer\": \"http://a.tellapart.com/ai?d=160x600&nid=b433O34UnNkbzLTW3-3_5nb6fz5RPDmxr97rjE4XPHDHoa0830fN6bT4xGXfIqO3f6g',%20decoded='\\xaaf\\xbd\\x10]\\xc1\\x1d\\xa0\\x111\\xbf\\x9b\\xe0\\xb0\\x0f\\x15')\"}")
+(def j "{\"url_encoded_thing\": \"http://domain.com/T4xGXfIqO3f6g',%20decoded='\\xaaf\\xbd\\x10]\\xc1\\x1d\\xa0\\x111\\xbf\\x9b\\xe0\\xb0\\x0f\\x15')\"}")
 (def k "{\"num\": 1, \"num_as_str\": \"2\", \"str_prop\": \"this is a str\", \"bool_prop_1\": true, \"bool_prop_2\": \"this is not a bool\", \"array_prop\": [1, 2, 3], \"syn_prop\": \"-\"}")
-(def l {"okl_params" {"hoist1" "foo" "hoist2" "bar"}
-        "okl_experiment" {"hoist3" "baz"}
-        "X-Okl-Params" {"hoist4" "foo" "hoist5" "bar"}
-        "X-Okl-Experiment" {"hoist6" "baz"}
+(def l {"nested_params" {"hoist1" "foo" "hoist2" "bar"}
+        "nested_experiment_params" {"hoist3" "baz"}
+        "X-Nested-Params" {"hoist4" "foo" "hoist5" "bar"}
+        "X-Nested-Experiment-Params" {"hoist6" "baz"}
         "shouldn't get hoisted" {"hoist7" "quux"}
         "denorm_prop" ["a" "b"]})
 (def m {"foo" "nine"
@@ -93,9 +93,9 @@ all the xforms (with their arguments) in the order specified"
      ;;              :remove-cruft true
      ;;              :unicode-recode true))
      (xform-phase (xforms
-                   :hoist true [{:properties ["okl_params" "X-Okl-Params"]
+                   :hoist true [{:properties ["nested_params" "X-Nested-Params"]
                                  :type "hoist-once-for-property"}
-                                {:properties ["okl_experiment" "X-Okl-Experiment"]
+                                {:properties ["nested_experiment_params" "X-Nested-Experiment-Params"]
                                  :type "hoist-once-for-property"
                                  :prefix "exp_"
                                  :suffix "_test"}]
