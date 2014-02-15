@@ -116,8 +116,8 @@ all the xforms (with their arguments) in the order specified"
                    :static-value-merge true {"additional_prop" 4422}
                    :default-value-merge true {"syn_prop" 45
                                               "test_prop" 48}
-                   :denormalize-map false
-                   :prune-nils true)))))
+                   :prune-nils true
+                   :denormalize true)))))
 
 
 
@@ -134,7 +134,7 @@ all the xforms (with their arguments) in the order specified"
 ;;      This is jawsome-pipeline (?)
 ;;      This is where custom xforms are specified?
 ;; 1. add pre, mid, post, etc custom transforms
-;; 2. implement the rest of the xform-phase xform-registry
+;; 2. implement the xform-phase xform-library
 ;; 3. Q: is the Xform signature REALLY this?
 ;;           json-map => [json-map]
 ;;    A: yes!

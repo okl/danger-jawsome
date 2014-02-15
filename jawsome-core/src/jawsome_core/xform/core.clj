@@ -4,8 +4,8 @@
   (:require [roxxi.utils.print :refer [print-expr]])
   (:require [roxxi.utils.collections :refer [reassoc-many]])
   (:require [jawsome-core.common-utils :refer [defregistry]])
-  (:require [denormal.core :refer [denormalize-map]])
-  (:use jawsome-core.xform.xforms.hoist
+  (:use jawsome-core.xform.xforms.denormalize
+        jawsome-core.xform.xforms.hoist
         jawsome-core.xform.xforms.property-mapping
         jawsome-core.xform.xforms.pruning
         jawsome-core.xform.xforms.reify-values
@@ -106,7 +106,7 @@ function constructors"
     path-specific-synonymizer ;;
     value-type-filter ;; one arg -- path=>type
     ;;mid
-    denormalize-map
+    denormalize
     ;;post
     prune-nils ;;no args
 
