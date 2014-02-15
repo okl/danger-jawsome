@@ -80,7 +80,6 @@ function constructors"
 (wrap-init-xform make-value-synonymizer)
 (wrap-init-xform static-value-merge-fn)
 (wrap-init-xform default-value-merge-fn)
-(wrap-init-xform denormalize-map)
 
 (defn make-composite-xform
   "Create a Transform which applies each Transform in order from left to right"

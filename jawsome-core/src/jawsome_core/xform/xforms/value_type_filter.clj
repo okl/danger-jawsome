@@ -16,8 +16,8 @@
 (defn- remove-offending-fields
   "It's assumed that path and satisfies-type? are coming from a kv
   in a form like so:
-    {[\"okl_params\" \"sales_event_id\"] :number
-     [\"okl_params\" \"sku_id\"] :number}"
+    {[\"top-level-prop-which-is-a-map\" \"nested-field-1\"] :number
+     [\"top-level-prop-which-is-a-map\" \"nested-field-2\"] :number}"
   [m [path satisfies-type?]]
   (if (satisfies-type? (get-in m path))
     m
