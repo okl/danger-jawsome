@@ -2,7 +2,8 @@
   "Implementing a mini-language for jawsome pipelines"
   {:author "Matt Halverson"
    :date "2014/02/10"}
-  (:require [diesel.core :refer [definterpreter]]
+  (:require [clojure.tools.logging :as log]
+            [diesel.core :refer [definterpreter]]
             [jawsome-core.reader.json.core :as r]
             [jawsome-core.xform.core :as x]
             [jawsome-dsl.separate-phases :refer [separate-phases]]
@@ -43,7 +44,7 @@
                      (pipeline-interp project)
                      nil)]
     (if project-fn
-      #(println "need to gather schema after the read phase, then project")
+      #(log/debug "need to gather schema after the read phase, then project")
       #(map xform-fn (read-fn %)))))
 
 (defmethod pipeline-interp :read-phase [[_ xforms]]
@@ -58,7 +59,7 @@
     (pipeline-interp xforms)))
 
 (defmethod pipeline-interp :project-phase [[_ & project-cfg]]
-  (println "Project-format cfg is" project-cfg))
+  (log/debug "Project-format cfg is" project-cfg))
 
 (defmethod pipeline-interp :xforms [[_ & xforms]]
   "Returns a single function, which is the composition of
@@ -82,16 +83,16 @@ all the xforms (with their arguments) in the order specified"
           args (drop 2 xform)]
       #(apply fxn (conj args %)))
     (do
-      (println "xform is disabled, skipping it:" xform)
+      (log/debug "xform is disabled, skipping it:" xform)
       identity)))
 
 
 (def pipeline
   (pipeline-interp
    '(pipeline
-     ;; (read-phase (xforms
-     ;;              :remove-cruft true
-     ;;              :unicode-recode true))
+     (read-phase (xforms
+                  :remove-cruft true
+                  :unicode-recode true))
      (xform-phase (xforms
                    :hoist true [{:properties ["nested_params" "X-Nested-Params"]
                                  :type "hoist-once-for-property"}
@@ -127,19 +128,3 @@ all the xforms (with their arguments) in the order specified"
     ;; a (lazy) sequence of records of output.
     (doall
      (map println (pipeline line)))))
-
-
-;; 0. Make the order of the ordered ones not depend on
-;;        the order they're specified in
-;;      This is jawsome-pipeline (?)
-;;      This is where custom xforms are specified?
-;; 1. add pre, mid, post, etc custom transforms
-;; 2. implement the xform-phase xform-library
-;; 3. Q: is the Xform signature REALLY this?
-;;           json-map => [json-map]
-;;    A: yes!
-;; 4. at some point, need to implement the project-phase
-;; 5. ...separate config interpreter from pipeline builder...  <.<   >.>   <.<
-;; 6. make bindings for std-in / std-out
-;;        i.e. turn -main into a cli wrapper
-;; 7. log, not print
