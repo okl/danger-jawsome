@@ -4,6 +4,8 @@
    :date "2014/02/10"}
   (:require [clojure.tools.logging :as log]
             [diesel.core :refer [definterpreter]]
+            [jawsome-core.common-utils :refer [seqify
+                                               safe-seq-apply]]
             [jawsome-core.reader.json.core :as r]
             [jawsome-core.xform.core :as x]
             [jawsome-dsl.separate-phases :refer [separate-phases]]
@@ -38,20 +40,19 @@
   (let [[read xform project] (separate-phases phases)
         read-fn (if read
                   (pipeline-interp read)
-                  list)
+                  identity)
         xform-fn (pipeline-interp xform)
         project-fn (if project
                      (pipeline-interp project)
                      nil)]
     (if project-fn
-      #(log/debug "need to gather schema after the read phase, then project")
-      #(map xform-fn (read-fn %)))))
+      #(log/error "Project phase is not yet implemented; need to gather schema after the read phase, then project")
+      #(xform-fn (read-fn %)))))
 
 (defmethod pipeline-interp :read-phase [[_ xforms]]
   (with-registry r/xform-registry
     (let [xform (pipeline-interp xforms)
-          composed-xform (comp list xform)
-          json-reader (r/make-json-reader :pre-xform composed-xform)]
+          json-reader (r/make-json-reader :pre-xform xform)]
       #(r/read-str json-reader %))))
 
 (defmethod pipeline-interp :xform-phase [[_ xforms]]
@@ -65,11 +66,12 @@
   "Returns a single function, which is the composition of
 all the xforms (with their arguments) in the order specified"
   (let [partitioned (partition-by keyword? xforms)
-        xform*enabled?*args (map #(apply concat %) (partition 2 partitioned))
-        parseable-xforms (map #(list 'xform %) xform*enabled?*args)
-        xforms (if (empty? parseable-xforms)
+        xform*enabled?*args (map #(apply concat %)
+                                 (partition 2 partitioned))
+        parseable (map #(list 'xform %) xform*enabled?*args)
+        xforms (if (empty? parseable)
                  [identity]
-                 (map pipeline-interp parseable-xforms))]
+                 (map pipeline-interp parseable))]
     (apply comp (reverse xforms))))
 
 (defn- enabled? [xform]
@@ -81,7 +83,7 @@ all the xforms (with their arguments) in the order specified"
     (let [k (first xform)
           fxn (keyword-to-xform k *registry*)
           args (drop 2 xform)]
-      #(apply fxn (conj args %)))
+      #(safe-seq-apply fxn % args))
     (do
       (log/debug "xform is disabled, skipping it:" xform)
       identity)))
@@ -90,9 +92,9 @@ all the xforms (with their arguments) in the order specified"
 (def pipeline
   (pipeline-interp
    '(pipeline
-     (read-phase (xforms
-                  :remove-cruft true
-                  :unicode-recode true))
+     ;; (read-phase (xforms
+     ;;              :remove-cruft true
+     ;;              :unicode-recode true))
      (xform-phase (xforms
                    :hoist true [{:properties ["nested_params" "X-Nested-Params"]
                                  :type "hoist-once-for-property"}
