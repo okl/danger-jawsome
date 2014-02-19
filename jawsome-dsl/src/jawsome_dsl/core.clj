@@ -4,8 +4,8 @@
    :date "2014/02/10"}
   (:require [clojure.tools.logging :as log]
             [diesel.core :refer [definterpreter]]
-            [jawsome-core.common-utils :refer [seqify
-                                               safe-seq-apply]]
+            [jawsome-dsl.utils :refer [seqify
+                                       safe-seq-apply]]
             [jawsome-core.reader.json.core :as r]
             [jawsome-core.xform.core :as x]
             [jawsome-dsl.separate-phases :refer [separate-phases]]
