@@ -20,11 +20,13 @@ This is useful when you have a synonym mapping like:
       (get value=>synonym current-value)
       current-value)))
 
-(defn global-synonymizer [json-map value=>synonym]
-  (walk-update-scalars json-map (make-negative-safe-lookup-fn value=>synonym)))
+(defn value-synonymizer [m synonym-fn]
+  (walk-update-scalars m synonym-fn))
 
 (defn make-value-synonymizer [value=>synonym]
-  #(global-synonymizer % value=>synonym))
+  (let [synonym-fn (make-negative-safe-lookup-fn value=>synonym)]
+    #(value-synonymizer % synonym-fn)))
+
 
 
 ;; # Path-specific synonymization
@@ -58,6 +60,9 @@ This is useful when you have a synonym mapping like:
 (def- make-path=>syns-memoed
   (memoize make-path=>syns))
 
-(defn path-specific-synonymizer [json-map default-syns path=>extra-syns]
+(defn path-specific-synonymizer [json-map path=>syns]
+  (reduce translate-syn json-map path=>syns))
+
+(defn make-path-specific-synonymizer [default-syns path=>extra-syns]
   (let [path=>syns (make-path=>syns-memoed default-syns path=>extra-syns)]
-    (reduce translate-syn json-map path=>syns)))
+    #(path-specific-synonymizer % path=>syns)))
