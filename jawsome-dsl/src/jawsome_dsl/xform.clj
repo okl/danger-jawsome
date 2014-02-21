@@ -8,7 +8,7 @@
             [roxxi.utils.common :refer [def-]])
   (:require [jawsome-core.reader.json.xforms.unicode :refer [unicode-recode]]
             [jawsome-core.reader.json.xforms.cruft :refer [remove-cruft]]
-            [jawsome-core.reader.json.core :refer [make-json-reader]])
+            [jawsome-core.reader.json.core :refer [make-json-reader-fn]])
   (:use jawsome-core.xform.xforms.denormalize
         jawsome-core.xform.xforms.hoist
         jawsome-core.xform.xforms.property-mapping
@@ -34,7 +34,7 @@
 ;; Read phase
 (defxform 'remove-cruft (constantly remove-cruft))
 (defxform 'unicode-recode (constantly unicode-recode))
-(defxform 'read-json make-json-reader)
+(defxform 'read-json make-json-reader-fn)
 
 ;; Xform phase
 ;;hoist
@@ -116,7 +116,7 @@ map* is short hand for a sequence of 0 or more maps
         (comp seqify inited-fn)))))
 
 (defmethod xform-phase-interp :lookup [[_ fn-id] reg]
-  (let [init-fn (print-expr (get reg fn-id))]
+  (let [init-fn (get reg fn-id)]
     (if (nil? init-fn)
       (do
         (log/errorf "Unknown function %s specified. Available: %s"
@@ -125,17 +125,21 @@ map* is short hand for a sequence of 0 or more maps
       init-fn)))
 
 (defvar 'translate-cfg {"yes" true "no" false})
-(defvar 'remap-d-cfg (fn [] {:d "renamed!"}))
+(defvar 'remap-d-cfg (fn [] {"d" "renamed!"}))
 
 (def the-program '(xforms
-                    (xforms
-                     (xform (lookup translate) (lookup translate-cfg))
-                     (xform (lookup reify)))
-                    (xforms
+                   (xforms
+                    "Read phase"
+                    (xform (lookup read-json)))
+                   (xforms
+                    "Xform phase"
+                    (xform (lookup translate) (lookup translate-cfg))
+                    (xform (lookup reify)))
+                   (xforms
                      (xform (lookup remap-properties) (dethunk (lookup remap-d-cfg)))
-                     (xform (lookup remap-properties) {:e "Also renamed!"})
+                     (xform (lookup remap-properties) {"e" "Also renamed!"})
                      (xform (lookup reify)))))
 
 (def b (xform-phase-interp the-program (xform-registry)))
-
-(b {:a "yes" :b "no" :c "14" :d "rename_me" :e "ooh me too"})
+(b "{\"a\": \"yes\", \"b\": \"no\", \"c\": \"14\", \"d\": \"rename_me\", \"e\": \"ooh me too\"}")
+;;(b {"a" "yes" "b" "no" "c" "14" "d" "rename_me" "e" "ooh me too"})
