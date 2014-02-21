@@ -136,15 +136,15 @@ all the xforms (with their arguments) in the order specified"
 ;; two registries in an env
 ;; concierge-style over each xforms block
 
-  '(pipeline
-    (read-phase ...)
-    (xform-phase
-     (custom myfunc)
-     (xforms :reify-values
-             :global-syn x)
-     (xforms :denormalize-map
-             :hoist args)
-     (custom my-other-func)))
+ '(pipeline
+   (read-phase ...)
+   (xform-phase
+    (custom myfunc)
+    (xforms :reify-values
+            :global-syn (lookup x))
+    (xforms :denormalize-map
+            :hoist args)
+    (custom my-other-func)))
 
 ;; L1
 (xforms "Top-level"
