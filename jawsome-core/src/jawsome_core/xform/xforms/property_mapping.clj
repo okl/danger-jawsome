@@ -8,6 +8,8 @@
 ;; Note: since this transparently delegates to `reassoc-many`, we will
 ;; skip unit testing this
 
+(def property-remapper reassoc-many)
+
 (defn make-property-remapper
   "Given a property remapping configuration, remaps the
 property paths in a map if the source path is valid,
@@ -18,6 +20,4 @@ Property Remapping Configuraton is as defined in
 `reassoc-many` in roxxi/clojure-common-utils"
   [property-remapping]
   (fn remap-properties [m]
-    (reassoc-many m property-remapping)))
-
-(def property-remapper reassoc-many)
+    (property-remapper m property-remapping)))

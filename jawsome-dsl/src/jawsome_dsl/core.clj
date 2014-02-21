@@ -130,3 +130,40 @@ all the xforms (with their arguments) in the order specified"
     ;; a (lazy) sequence of records of output.
     (doall
      (map println (pipeline line)))))
+
+
+;; L2
+;; two registries in an env
+;; concierge-style over each xforms block
+
+ '(pipeline
+   (read-phase ...)
+   (xform-phase
+    (custom myfunc)
+    (xforms :reify-values
+            :global-syn (lookup x))
+    (xforms :denormalize-map
+            :hoist args)
+    (custom my-other-func)))
+
+;; L1
+(xforms "Top-level"
+        (xforms "Read phase"
+                (xform (lookup 'remove-cruft) fn-init1 fn-init2)
+                (xform (lookup 'unicode-recode))
+                (xform (lookup 'read-json) :key-fn true))
+        (xforms "Transform Phase"
+                (xforms
+                 (xform (lookup fn-id1) fn-init1 fn-init2)
+                 (xform (lookup fn-id2)))
+                (xforms
+                 (xform (lookup 'reify-values) fn-init1 fn-init2)
+                 (xform (lookup 'shawns-fn) fn-init1 fn-init2)
+                 (xform (lookup 'denormalize-map)))))
+
+
+
+Supports L1
+(add-to-registry!
+ [shawns-fn] => name
+ [some-other-fn])
