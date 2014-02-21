@@ -33,11 +33,6 @@
     {["bool_prop_1"] :boolean
      ["bool_prop_2"] :boolean}))
 
-(defn my-custom-xform [m]
-  (assoc m "I can insert" "custom values!"))
-(defxform 'my-custom-xform
-  (fn [] my-custom-xform))
-
 (def full-pipeline-program
   '(xforms
      (xforms "Read phase"
@@ -169,6 +164,12 @@
                   "syn_prop" 45,
                   "test_prop" 48})))))
 
+(defn my-custom-xform [m]
+  (assoc m "I can insert" "custom values!"))
+
+(defxform 'my-custom-xform
+  (fn [] my-custom-xform))
+
 (deftest custom-xforms-test
   (testing "I should be able to specify my own custom xforms"
     (let [pipeline
@@ -184,3 +185,11 @@
              (list {"I can insert" "custom values!",
                     "syn_prop" 42,
                     "a" 42}))))))
+
+(deftest empty-xforms-test
+  (testing "May have empty xforms clause"
+    (let [pipeline (xform-phase-interp '(xforms))]
+      (is (= (pipeline m)
+             (list m)))
+      (is (= (pipeline {})
+             (list {}))))))
