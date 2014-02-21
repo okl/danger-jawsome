@@ -9,17 +9,18 @@
   (:require [jawsome-core.reader.json.xforms.unicode :refer [unicode-recode]]
             [jawsome-core.reader.json.xforms.cruft :refer [remove-cruft]]
             [jawsome-core.reader.json.core :refer [make-json-reader-fn]])
-  (:use jawsome-core.xform.xforms.denormalize
-        jawsome-core.xform.xforms.hoist
-        jawsome-core.xform.xforms.property-mapping
-        jawsome-core.xform.xforms.pruning
-        jawsome-core.xform.xforms.reify-values
-        jawsome-core.xform.xforms.static-injection
-        jawsome-core.xform.xforms.synonyms
-        jawsome-core.xform.xforms.value-type-filter))
+  (:require [jawsome-core.xform.xforms.denormalize :refer [make-denormalize]]
+            [jawsome-core.xform.xforms.hoist :refer [make-hoist]]
+            [jawsome-core.xform.xforms.property-mapping :refer [make-property-remapper]]
+            [jawsome-core.xform.xforms.pruning :refer [prune-nils]]
+            [jawsome-core.xform.xforms.reify-values :refer [reify-values]]
+            [jawsome-core.xform.xforms.static-injection :refer [static-value-merge-fn
+                                                                default-value-merge-fn]]
+            [jawsome-core.xform.xforms.synonyms :refer [make-value-synonymizer
+                                                        make-path-specific-synonymizer]]
+            [jawsome-core.xform.xforms.value-type-filter :refer [make-value-type-filter]]))
 
 (def- sym-tab (atom {}))
-
 
 (defn defxform [k v]
   (when (contains? @sym-tab k)
@@ -31,27 +32,40 @@
 (defn xform-registry []
   @sym-tab)
 
-;; Read phase
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Initialize dat registry doe
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Read phase, ordered xforms
 (defxform 'remove-cruft (constantly remove-cruft))
-(defxform 'unicode-recode (constantly unicode-recode))
+(defxform 'recode-unicode (constantly unicode-recode))
 (defxform 'read-json make-json-reader-fn)
 
-;; Xform phase
-;;hoist
+;; Xform phase, ordered xforms
+(defxform 'hoist make-hoist)
 (defxform 'remap-properties make-property-remapper)
 (defxform 'reify (constantly reify-values))
 (defxform 'translate make-value-synonymizer)
 (defxform 'translate-paths make-path-specific-synonymizer)
-(defxform 'value-type-filter make-value-type-filter)
+(defxform 'type-enforce make-value-type-filter)
+(defxform 'denorm make-denormalize)
 (defxform 'prune-nils (constantly prune-nils))
 
-
-
-
-;; not ordered
+;; Xform phase, un-ordered xforms aka library xforms
 (defxform 'static-values static-value-merge-fn)
 (defxform 'default-values default-value-merge-fn)
+;; TODO implement these:
+;; - remove aka prune-paths
+;; - only
+;; - drop-if-particular-kv-occurs (e.g. path='/server-status?auto')
+;; - drop-if-had-to-type-enforce
+;;it is worth remarking that the 'default ordered xforms'
+;; can also be treated as library, of course.
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Define dat interpreter doe
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; We aren't using a more generic version here
 ;; either because we don't think it can exist
 ;; or we understand that the contract is we want
@@ -70,12 +84,6 @@
   ['lookup => :lookup]
   ['dethunk => :dethunk])
 
-
-
-
-(defmethod xform-phase-interp :dethunk [[_ thunk-val-expr] reg]
-  (let [thunk (xform-phase-interp thunk-val-expr reg)]
-    (if (fn? thunk) (thunk) thunk)))
 
 (defn- xforms-applier
   "Takes a collection of functions s.t. each function takes a map => map*
@@ -124,22 +132,6 @@ map* is short hand for a sequence of 0 or more maps
         :missing-fn)
       init-fn)))
 
-(defvar 'translate-cfg {"yes" true "no" false})
-(defvar 'remap-d-cfg (fn [] {"d" "renamed!"}))
-
-(def the-program '(xforms
-                   (xforms
-                    "Read phase"
-                    (xform (lookup read-json)))
-                   (xforms
-                    "Xform phase"
-                    (xform (lookup translate) (lookup translate-cfg))
-                    (xform (lookup reify)))
-                   (xforms
-                     (xform (lookup remap-properties) (dethunk (lookup remap-d-cfg)))
-                     (xform (lookup remap-properties) {"e" "Also renamed!"})
-                     (xform (lookup reify)))))
-
-(def b (xform-phase-interp the-program (xform-registry)))
-(b "{\"a\": \"yes\", \"b\": \"no\", \"c\": \"14\", \"d\": \"rename_me\", \"e\": \"ooh me too\"}")
-;;(b {"a" "yes" "b" "no" "c" "14" "d" "rename_me" "e" "ooh me too"})
+(defmethod xform-phase-interp :dethunk [[_ thunk-val-expr] reg]
+  (let [thunk (xform-phase-interp thunk-val-expr reg)]
+    (if (fn? thunk) (thunk) thunk)))
