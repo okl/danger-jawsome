@@ -23,10 +23,13 @@
     m
     (dissoc-in m path)))
 
-(defn value-type-filter [m path=>satisfies-type?]
-  (reduce remove-offending-fields m path=>satisfies-type?))
 
 (defn make-value-type-filter [path=>type]
-  (let [path=>satisfies-type?
-        (project-map path=>type :value-xform type=>satisfies-type?)]
-    #(value-type-filter % path=>satisfies-type?)))
+  (let [path=>satisfies-type? (project-map path=>type
+                                           :value-xform type=>satisfies-type?)]
+    (fn [m]
+      (reduce remove-offending-fields m path=>satisfies-type?))))
+
+(defn value-type-filter [m path=>type]
+  (let [value-type-filter-fn (make-value-type-filter path=>type)]
+    (value-type-filter-fn m)))

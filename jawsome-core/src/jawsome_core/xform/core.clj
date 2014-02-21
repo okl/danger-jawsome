@@ -3,7 +3,6 @@
    :date "11/10/2013"}
   (:require [roxxi.utils.print :refer [print-expr]])
   (:require [roxxi.utils.collections :refer [reassoc-many]])
-  (:require [jawsome-core.common-utils :refer [defregistry]])
   (:use jawsome-core.xform.xforms.denormalize
         jawsome-core.xform.xforms.hoist
         jawsome-core.xform.xforms.property-mapping
@@ -95,28 +94,3 @@ function constructors"
   "Create a Transform which applies each Transform in order from left to right"
   [& xforms]
   (make-composite-xform xforms))
-
-(defregistry xform-registry
-  '(hoist
-    property-remapper ;;one arg -- map of what to rename. see reassoc-many. it can take paths!
-    ;;pre
-    reify-values ;;no args
-    global-synonymizer ;; one arg -- value=>synonym
-    path-specific-synonymizer ;;
-    value-type-filter ;; one arg -- path=>type
-    ;;mid
-    denormalize
-    ;;post
-    prune-nils ;;no args
-
-    ;;things that are library, not ordered:
-    ;; - prune-paths
-    ;; - only
-    ;; - remove
-    ;; - drop-if-particular-kv-occurs (e.g. path='/server-status?auto')
-    ;; - drop-if-had-to-type-enforce
-    static-value-merge ;;one arg -- map of what to force-insert
-    default-value-merge ;;one arg -- map of what to insert if not present
-    ;;it is worth remarking that the 'default ordered xforms'
-    ;; can also be treated as library, of course.
-    ))

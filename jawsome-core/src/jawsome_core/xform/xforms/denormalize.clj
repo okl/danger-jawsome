@@ -7,3 +7,7 @@
 
 ;; It's just that easy.
 (def denormalize denormalize-map)
+
+(defn make-denormalize [& denorm-config]
+  (fn [m]
+    (apply denormalize (cons m denorm-config))))
