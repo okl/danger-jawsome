@@ -40,6 +40,11 @@
 (defxform 'recode-unicode (constantly unicode-recode))
 (defxform 'read-json make-json-reader-fn)
 
+(def read-phase-ordering
+  ['remove-cruft
+   'recode-unicode
+   'read-json])
+
 ;; Xform phase, ordered xforms
 (defxform 'hoist make-hoist)
 (defxform 'remap-properties make-property-remapper)
@@ -48,11 +53,21 @@
 (defxform 'translate-paths make-path-specific-synonymizer)
 (defxform 'type-enforce make-value-type-filter)
 (defxform 'denorm make-denormalize)
-(defxform 'prune-nils (constantly prune-nils))
+
+(def xform-phase-ordering
+  ['hoist
+   'remap-properties
+   'reify
+   'translate
+   'translate-paths
+   'type-enforce
+   'denorm])
+
 
 ;; Xform phase, un-ordered xforms aka library xforms
 (defxform 'static-values static-value-merge-fn)
 (defxform 'default-values default-value-merge-fn)
+(defxform 'prune-nils (constantly prune-nils))
 ;; TODO implement these:
 ;; - remove aka prune-paths
 ;; - only
