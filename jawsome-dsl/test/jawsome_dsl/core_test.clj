@@ -3,12 +3,11 @@
   {:author "Matt Halverson"
    :date "2014/02/25"}
   (:require [clojure.test :refer :all]
-            [jawsome-dsl.core :refer [pipeline-interp]]
+            [jawsome-dsl.core :refer [pipeline-interp
+                                      default-env]]
             [jawsome-dsl.xform :refer [defvar
                                        defxform]]
             [roxxi.utils.print :refer [print-expr]]))
-
-(def default-env {})
 
 (deftest xforms-blocks-get-reordered
   (let [good '(xforms "Top-level"

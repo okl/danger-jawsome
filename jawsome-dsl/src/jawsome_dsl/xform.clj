@@ -39,9 +39,9 @@
 
 ;; (xform (lookup 'fn-id) & args-to-init-fn) => (fn [m] ...)
 (definterpreter l1-interp [reg]
-  ['xforms => :xforms]
-  ['xform => :xform]
-  ['lookup => :lookup]
+  ['xforms  => :xforms]
+  ['xform   => :xform]
+  ['lookup  => :lookup]
   ['dethunk => :dethunk])
 
 

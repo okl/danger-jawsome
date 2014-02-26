@@ -7,7 +7,9 @@
                                        defvar
                                        l1-interp
                                        xform-registry]]
-            [jawsome-dsl.init-registry]))
+            [jawsome-dsl.init-registry :as reg]))
+
+(reg/init)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Set the stage

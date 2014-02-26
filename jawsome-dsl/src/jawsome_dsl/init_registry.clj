@@ -1,5 +1,5 @@
 (ns jawsome-dsl.init-registry
-  "Requiring this module will initialize the registry for Jawsome pipelines"
+  "Running the `init` function in this module will init the xform-registry"
   {:author "Matt Halverson"
    :date "2014/02/25"}
   (:require [jawsome-dsl.xform :refer [defxform defvar]])
@@ -17,42 +17,47 @@
                                                         make-path-specific-synonymizer]]
             [jawsome-core.xform.xforms.value-type-filter :refer [make-value-type-filter]]))
 
-;; Read phase, ordered xforms
-(defxform 'remove-cruft (constantly remove-cruft))
-(defxform 'recode-unicode (constantly unicode-recode))
-(defxform 'read-json make-json-reader-fn)
+(defn init []
+  ;;this should cause the other fxns in here to be loaded into the registry
 
-(def read-phase-ordering
-  ['remove-cruft
-   'recode-unicode
-   'read-json])
+  ;; Read phase, ordered xforms
+  (defxform 'remove-cruft (constantly remove-cruft))
+  (defxform 'recode-unicode (constantly unicode-recode))
+  (defxform 'read-json make-json-reader-fn)
 
-;; Xform phase, ordered xforms
-(defxform 'hoist make-hoist)
-(defxform 'remap-properties make-property-remapper)
-(defxform 'reify (constantly reify-values))
-(defxform 'translate make-value-synonymizer)
-(defxform 'translate-paths make-path-specific-synonymizer)
-(defxform 'type-enforce make-value-type-filter)
-(defxform 'denorm make-denormalize)
+  (def read-phase-ordering
+    ['remove-cruft
+     'recode-unicode
+     'read-json])
 
-(def xform-phase-ordering
-  ['hoist
-   'remap-properties
-   'reify
-   'translate
-   'translate-paths
-   'type-enforce
-   'denorm])
+  ;; Xform phase, ordered xforms
+  (defxform 'hoist make-hoist)
+  (defxform 'remap-properties make-property-remapper)
+  (defxform 'reify (constantly reify-values))
+  (defxform 'translate make-value-synonymizer)
+  (defxform 'translate-paths make-path-specific-synonymizer)
+  (defxform 'type-enforce make-value-type-filter)
+  (defxform 'denorm make-denormalize)
 
-;; Xform phase, un-ordered xforms
-(defxform 'static-values static-value-merge-fn)
-(defxform 'default-values default-value-merge-fn)
-(defxform 'prune-nils (constantly prune-nils))
-;; TODO implement these:
-;; - remove aka prune-paths
-;; - only
-;; - drop-if-particular-kv-occurs (e.g. path='/server-status?auto')
-;; - drop-if-had-to-type-enforce
-;;it is worth remarking that the 'default ordered xforms'
-;; can also be treated as library, of course.
+  (def xform-phase-ordering
+    ['hoist
+     'remap-properties
+     'reify
+     'translate
+     'translate-paths
+     'type-enforce
+     'denorm])
+
+  ;; Xform phase, un-ordered xforms
+  (defxform 'static-values static-value-merge-fn)
+  (defxform 'default-values default-value-merge-fn)
+  (defxform 'prune-nils (constantly prune-nils))
+  ;; TODO implement these:
+  ;; - remove aka prune-paths
+  ;; - only
+  ;; - drop-if-particular-kv-occurs (e.g. path='/server-status?auto')
+  ;; - drop-if-had-to-type-enforce
+  ;;it is worth remarking that the 'default ordered xforms'
+  ;; can also be treated as library, of course.
+
+  nil)

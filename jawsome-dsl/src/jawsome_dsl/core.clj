@@ -5,7 +5,9 @@
   (:require [clojure.tools.logging :as log]
             [diesel.core :refer [definterpreter]]
             [jawsome-dsl.xform :refer [defvar
-                                       defxform]]
+                                       defxform
+                                       l1-interp
+                                       xform-registry]]
             [jawsome-dsl.separate-phases :refer [separate-phases]]
             [jawsome-dsl.init-registry :as reg]
             [roxxi.utils.print :refer [print-expr]]))
@@ -21,6 +23,8 @@
 ;; It has an environment (env), which is a map that the defmethods can put
 ;; stuff in. So far, we only use it to propagate the current xform-ordering.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def default-env {})
+
 (defn- add-prop-to-env [env prop val]
   (assoc env prop val))
 (defn- get-prop-from-env [env prop]
@@ -59,6 +63,8 @@
       (list* 'xforms
              "Top-level"
              concatted))))
+
+;;needs a list, not a cons. WHY?
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Phase definitions. A read/xform phase has 0 or more blocks.
@@ -183,3 +189,21 @@
     ;; a (lazy) sequence of records of output.
     (doall
      (map println (pipeline line)))))
+
+
+
+(reg/init)
+
+(def l {"flatten" {"me" "foobar"}
+        "denorm_prop" ["a" "b"]})
+
+(let [l2 '(pipeline
+           ;;(read-phase (xforms :read-json))
+           (xform-phase (xforms :reify :denorm)))
+      l1 (pipeline-interp l2 default-env)
+      pipeline (l1-interp l1 (xform-registry))]
+  (print-expr l2)
+  (print-expr l1)
+  (print-expr pipeline)
+  (print-expr (xform-registry))
+  (pipeline l))
