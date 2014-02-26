@@ -1,9 +1,13 @@
 (ns jawsome-dsl.xform-test
+  "Tests for the Jawsome L1 interpreter"
+  {:author "Matt Halverson"
+   :date "2014/02/10"}
   (:require [clojure.test :refer :all]
             [jawsome-dsl.xform :refer [defxform
                                        defvar
-                                       xform-phase-interp
-                                       xform-registry]]))
+                                       l1-interp
+                                       xform-registry]]
+            [jawsome-dsl.init-registry]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Set the stage
@@ -61,7 +65,7 @@
              (xform (lookup prune-nils))
              (xform (lookup denorm)))))
 (def full-pipeline
-  (xform-phase-interp full-pipeline-program (xform-registry)))
+  (l1-interp full-pipeline-program (xform-registry)))
 
 (def no-read-phase-pipeline-program
   '(xforms "Xform phase"
@@ -86,7 +90,7 @@
              (xform (lookup prune-nils))
              (xform (lookup denorm))))
 (def no-read-phase-pipeline
-  (xform-phase-interp no-read-phase-pipeline-program (xform-registry)))
+  (l1-interp no-read-phase-pipeline-program (xform-registry)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Actual tests
@@ -173,7 +177,7 @@
 (deftest custom-xforms-test
   (testing "I should be able to specify my own custom xforms"
     (let [pipeline
-          (xform-phase-interp
+          (l1-interp
            '(xforms
              (xform (lookup reify))
              (xform (lookup static-values) {"syn_prop" 42})
@@ -188,7 +192,7 @@
 
 (deftest empty-xforms-test
   (testing "May have empty xforms clause"
-    (let [pipeline (xform-phase-interp '(xforms))]
+    (let [pipeline (l1-interp '(xforms) (xform-registry))]
       (is (= (pipeline m)
              (list m)))
       (is (= (pipeline {})
