@@ -14,7 +14,7 @@
 
 (defn defxform [k v]
   (when (contains? @sym-tab k)
-    (log/warnf "Attemping to overwrite already defined function %s" k))
+    (log/warnf "Attempting to overwrite already defined function %s" k))
   (swap! sym-tab #(assoc % k v)))
 
 (def defvar defxform)
