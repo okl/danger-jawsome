@@ -183,27 +183,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn pipeline->fn
+  ([l2]
+     (pipeline->fn l2 default-env))
+  ([l2 env]
+     (let [l1 (pipeline-interp l2 default-env)
+           actual-fxn (l1-interp l1 (xform-registry))]
+       actual-fxn)))
+
 (defn -main [pipeline]
   (doseq [line (line-seq (java.io.BufferedReader. *in*))]
     ;;The inner doall is because a single record of input produces
     ;; a (lazy) sequence of records of output.
     (doall
      (map println (pipeline line)))))
-
-
-
-(reg/init)
-
-(def l {"flatten" {"me" "foobar"}
-        "denorm_prop" ["a" "b"]})
-
-(let [l2 '(pipeline
-           ;;(read-phase (xforms :read-json))
-           (xform-phase (xforms :reify :denorm)))
-      l1 (pipeline-interp l2 default-env)
-      pipeline (l1-interp l1 (xform-registry))]
-  (print-expr l2)
-  (print-expr l1)
-  (print-expr pipeline)
-  (print-expr (xform-registry))
-  (pipeline l))

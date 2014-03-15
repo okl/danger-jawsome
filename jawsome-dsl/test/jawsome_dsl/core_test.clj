@@ -6,7 +6,9 @@
             [jawsome-dsl.core :refer [pipeline-interp
                                       default-env]]
             [jawsome-dsl.xform :refer [defvar
-                                       defxform]]
+                                       defxform
+                                       l1-interp
+                                       xform-registry]]
             [roxxi.utils.print :refer [print-expr]]))
 
 (deftest xforms-blocks-get-reordered
@@ -216,8 +218,8 @@ exception should be thrown"
               (xforms :reify :hoist :denorm (ref hoist-cfg) :last-is-bad)
               (custom :shawns-fn)))
            default-env)))))
-  (testing "If an unrecognized xform appears in an ordered xforms block, an
-exception should be thrown"
+  (testing "If an unrecognized xform appears in an un-ordered xforms block, no
+exception should be thrown."
     (is (not (empty? (pipeline-interp
                       '(pipeline
                         (xform-phase
@@ -312,24 +314,33 @@ exception should be thrown"
 ;;           default-env)))))
 
 (deftest end-to-end-test
-  (testing ""
-    (is true)))
-;; ;; "xforms" are special ordered xforms
-;; ;; "custom" are regular un-ordered xforms, OR custom functions
-;; (defn shawns-fn [json-map]
-;;   json-map)
-
-;; (defxform 'shawns-fn
-;;   (fn []
-;;     shawns-fn))
-
-;; (defvar 'hoist-cfg
-;;   [{:properties ["nested_params" "X-Nested-Params"]
-;;     :type "hoist-once-for-property"}
-;;    {:properties ["nested_experiment_params" "X-Nested-Experiment-Params"]
-;;     :type "hoist-once-for-property"
-;;     :prefix "exp_"
-;;     :suffix "_test"}])
-
-;; (defvar 'foo
-;;   {"-" nil})
+  (testing "End-to-end test to see if we can convert an l2 to an l1 to
+an actual clojure function for a pipeline with"
+    (testing "just an xform phase"
+      (let [l2 '(pipeline
+                 (xform-phase (xforms :reify :denorm)))
+            l1 (pipeline-interp l2 default-env)
+            pipeline (l1-interp l1 (xform-registry))
+            test-record {"flatten" {"me" "foobar"}
+                         "denorm_prop" ["a" "b"]}]
+        (is (= (pipeline test-record)
+               (list {"flatten_dot_me" "foobar",
+                      "denorm_prop_arr" "a",
+                      "denorm_prop_idx" 0}
+                     {"flatten_dot_me" "foobar",
+                      "denorm_prop_arr" "b",
+                      "denorm_prop_idx" 1})))))
+    (testing "a read AND an xform phase"
+      (let [l2 '(pipeline
+                 (read-phase (xforms :read-json))
+                 (xform-phase (xforms :reify :denorm)))
+            l1 (pipeline-interp l2 default-env)
+            pipeline (l1-interp l1 (xform-registry))
+            test-record "{\"flatten\": {\"me\": \"foobar\"}, \"denorm_prop\": [\"a\", \"b\"]}"]
+        (is (= (pipeline test-record)
+               (list {"flatten_dot_me" "foobar",
+                      "denorm_prop_arr" "a",
+                      "denorm_prop_idx" 0}
+                     {"flatten_dot_me" "foobar",
+                      "denorm_prop_arr" "b",
+                      "denorm_prop_idx" 1})))))))
