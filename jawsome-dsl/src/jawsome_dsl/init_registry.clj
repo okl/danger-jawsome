@@ -9,7 +9,8 @@
   (:require [jawsome-core.xform.xforms.denormalize :refer [make-denormalize]]
             [jawsome-core.xform.xforms.hoist :refer [make-hoist]]
             [jawsome-core.xform.xforms.property-mapping :refer [make-property-remapper]]
-            [jawsome-core.xform.xforms.pruning :refer [prune-nils]]
+            [jawsome-core.xform.xforms.pruning :refer [make-prune-nils
+                                                       make-prune-paths]]
             [jawsome-core.xform.xforms.reify-values :refer [reify-values]]
             [jawsome-core.xform.xforms.static-injection :refer [static-value-merge-fn
                                                                 default-value-merge-fn]]
@@ -51,9 +52,9 @@
   ;; Xform phase, un-ordered xforms
   (defxform 'static-values static-value-merge-fn)
   (defxform 'default-values default-value-merge-fn)
-  (defxform 'prune-nils (constantly prune-nils))
+  (defxform 'prune-nils make-prune-nils)
+  (defxform 'prune-paths make-prune-paths)
   ;; TODO implement these:
-  ;; - remove aka prune-paths
   ;; - only
   ;; - drop-if-particular-kv-occurs (e.g. path='/server-status?auto')
   ;; - drop-if-had-to-type-enforce
