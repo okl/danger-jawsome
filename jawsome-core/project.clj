@@ -1,4 +1,4 @@
-(defproject  com.onekingslane.danger/jawsome-core "0.1.1-SNAPSHOT"
+(defproject  com.onekingslane.danger/jawsome-core "0.2"
   :description "A library of functions for dealing with reading and manipulating dirty JSON data"
   :url "http://www.github.com/okl/danger-jawsome"
   :license {:name "Eclipse Public License"
