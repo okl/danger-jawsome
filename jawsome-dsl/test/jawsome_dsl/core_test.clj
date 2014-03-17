@@ -178,6 +178,14 @@ exception should be thrown"
          (print-expr
           (pipeline-interp
            '(pipeline
+             (read-phase
+              (xforms :jk-not-a-real-xform-lol)))
+           default-env))))
+    (is (thrown?
+         RuntimeException
+         (print-expr
+          (pipeline-interp
+           '(pipeline
              (xform-phase
               (xforms :just-one-xform-which-is-bad)))
            default-env))))
@@ -242,14 +250,14 @@ exception should be thrown."
       (is (not (empty?
                 (pipeline-interp
                  '(pipeline
-                   (xform-phase (xforms :reify-values)))
+                   (xform-phase (xforms :reify)))
                  default-env)))))
     (testing "one"
       (is (not (empty?
                 (pipeline-interp
                  '(pipeline
                    (read-phase (xforms :remove-cruft))
-                   (xform-phase (xforms :reify-values)))
+                   (xform-phase (xforms :reify)))
                  default-env))))))
   (testing "May not have more than one read phase"
     (is (thrown?
@@ -258,7 +266,7 @@ exception should be thrown."
           '(pipeline
             (read-phase (xforms :remove-cruft))
             (read-phase (xforms :unicode-recode))
-            (xform-phase (xforms :reify-values)))
+            (xform-phase (xforms :reify)))
           default-env)))))
 
 (deftest must-have-exactly-one-xform-phase
@@ -267,7 +275,7 @@ exception should be thrown."
               (pipeline-interp
                '(pipeline
                  (read-phase (xforms :remove-cruft))
-                 (xform-phase (xforms :reify-values)))
+                 (xform-phase (xforms :reify)))
                default-env)))))
   (testing "Number of xform phases may not be"
     (testing "zero"

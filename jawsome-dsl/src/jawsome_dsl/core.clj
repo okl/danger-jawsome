@@ -17,6 +17,13 @@
      (log/error ~error-msg)
      (throw (RuntimeException. ~error-msg))))
 
+(defmacro log-and-return [prefix-string thing]
+  `(do
+     (let [pretty-thing# (with-out-str (clojure.pprint/pprint ~thing))
+           cleaner-thing# (clojure.string/trim pretty-thing#)]
+       (log/info (str ~prefix-string "\n" cleaner-thing#))
+       ~thing)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; L2 pipeline interpreter!
 ;;
@@ -54,17 +61,19 @@
 ;; be an xforms block.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmethod pipeline-interp :pipeline [[_ & phases] env]
+  (log-and-return "l2 forms that came in: " (cons 'pipeline phases))
   (let [separated (separate-phases phases)
         interped (map #(pipeline-interp % env) separated)
-        concatted (concat (remove nil? interped))]
-    (if (nth separated 2)
+        concatted (concat (remove nil? interped))
+        project-phase (nth separated 2)]
+    (if project-phase
       (log-and-throw (str "Project phase is not yet implemented; need to gather "
                           "schema after the read phase, then project"))
-      (list* 'xforms
-             "Top-level"
-             concatted))))
-
-;;needs a list, not a cons. WHY?
+      (log-and-return
+       "l1 forms that came out: "
+       (list* 'xforms
+              "Top-level"
+              concatted)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Phase definitions. A read/xform phase has 0 or more blocks.
