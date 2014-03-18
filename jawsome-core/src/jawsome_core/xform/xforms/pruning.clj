@@ -12,7 +12,7 @@
   (prune-map-scalars m nil?))
 
 (defn make-prune-nils []
-  (constantly prune-nils))
+  prune-nils)
 
 ;; ## Removing keys
 (defn- vectorify [thing]
