@@ -105,8 +105,11 @@
 (defn project-onto-field-order [some-map field-order]
   (map #(get some-map %) field-order))
 
-(defn map->xsv [some-map field-order delimiter]
-  (clojure.string/join delimiter (project-onto-field-order some-map field-order)))
+(defn map->xsv [some-map cumulative-schema delimiter]
+  (let [fields (get cumulative-schema :properties)
+        sorted-fields (sort fields)
+        projected (project-onto-field-order some-map sorted-fields)]
+    (clojure.string/join delimiter projected)))
 
 (defmethod pipeline-interp :project-phase [[_ & project-cfg] env]
   (log/debug "Project-format cfg is" project-cfg)
