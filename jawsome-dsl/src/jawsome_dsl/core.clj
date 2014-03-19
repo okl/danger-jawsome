@@ -6,7 +6,9 @@
             [diesel.core :refer [definterpreter]]
             [jawsome-dsl.xform :refer [defvar
                                        defxform
-                                       l1-interp
+                                       l1-interp-with-schema-fold
+                                       make-a-cumulative-schema
+                                       get-cumulative-schema
                                        xform-registry]]
             [jawsome-dsl.separate-phases :refer [separate-phases]]
             [jawsome-dsl.init-registry :as reg]
@@ -60,6 +62,8 @@
 ;; and emit them in one top-level xforms block. Expects each phase to, itself,
 ;; be an xforms block.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(reg/init)
+
 (defmethod pipeline-interp :pipeline [[_ & phases] env]
   (log-and-return "l2 forms that came in: " (cons 'pipeline phases))
   (let [separated (separate-phases phases)
@@ -97,6 +101,15 @@
     (list* 'xforms
            "Xform phase"
            (map #(pipeline-interp % new-env) xforms))))
+
+(defn project-onto-field-order [some-map field-order]
+  (map #(get some-map %) field-order))
+
+(defn map->xsv [some-map cumulative-schema delimiter]
+  (let [fields (get cumulative-schema :properties)
+        sorted-fields (sort fields)
+        projected (project-onto-field-order some-map sorted-fields)]
+    (clojure.string/join delimiter projected)))
 
 (defmethod pipeline-interp :project-phase [[_ & project-cfg] env]
   (log/debug "Project-format cfg is" project-cfg)
@@ -192,13 +205,47 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defprotocol XformAndSchemaProtocol
+  (xform [_ m])
+  (schema-so-far [_]))
+
+(deftype XformAndSchema [actual-fxn cumulative-schema]
+  XformAndSchemaProtocol
+  (xform [_ m]
+    (actual-fxn m))
+  (schema-so-far [_]
+    (get-cumulative-schema cumulative-schema)))
+
 (defn pipeline->fn
   ([l2]
      (pipeline->fn l2 default-env))
   ([l2 env]
      (let [l1 (pipeline-interp l2 default-env)
-           actual-fxn (l1-interp l1 (xform-registry))]
-       actual-fxn)))
+           cumulative-schema (make-a-cumulative-schema)
+           actual-fxn (l1-interp-with-schema-fold l1 (xform-registry) cumulative-schema)]
+       (XformAndSchema. actual-fxn cumulative-schema))))
+
+
+
+(def s (pipeline->fn
+        '(pipeline
+          (xform-phase
+           (xforms :reify :denorm)))))
+(schema-so-far s)
+(xform s {"k1" "12341234", "k2" ["10000asdfjl", "20000asdf"]})
+(schema-so-far s)
+
+(def a (pipeline->fn
+        '(pipeline
+          (xform-phase
+           (xforms :reify :denorm)))))
+(schema-so-far a)
+(xform a {"k1" "1", "k2" ["100", "200"]})
+(schema-so-far a)
+(xform a {"k1" "12", "k2" ["10", "200", "400"]})
+(schema-so-far a)
+
+
 
 (defn -main [pipeline]
   (doseq [line (line-seq (java.io.BufferedReader. *in*))]

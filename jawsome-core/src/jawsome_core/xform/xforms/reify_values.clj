@@ -29,7 +29,7 @@ Largely comes as a readaptation from roxxi/jsonschema parser.clj"
   (when (not (string? v))
     v))
 
-(defn- special-value? 
+(defn- special-value?
   "returns true if this is a special JSON value of true, false, or null"
   [v]
   (#{"true" "false" "null"} v))
@@ -72,7 +72,7 @@ Largely comes as a readaptation from roxxi/jsonschema parser.clj"
 
 
 (defn- parse-if-parsible [string]
-  (try 
+  (try
     (parse-string string)
     (catch com.fasterxml.jackson.core.JsonParseException e
       false)))
@@ -139,3 +139,6 @@ inner escaped JSON and return one materialized view of the map that is no longer
 un-escapeable. There is no limit to the amount of escaped JSON that can be handled."
   [m]
   (project-map m :value-xform reify-value))
+
+(defn make-reify-values []
+  reify-values)

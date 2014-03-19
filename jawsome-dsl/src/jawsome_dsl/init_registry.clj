@@ -11,7 +11,7 @@
             [jawsome-core.xform.xforms.property-mapping :refer [make-property-remapper]]
             [jawsome-core.xform.xforms.pruning :refer [make-prune-nils
                                                        make-prune-paths]]
-            [jawsome-core.xform.xforms.reify-values :refer [reify-values]]
+            [jawsome-core.xform.xforms.reify-values :refer [make-reify-values]]
             [jawsome-core.xform.xforms.static-injection :refer [static-value-merge-fn
                                                                 default-value-merge-fn]]
             [jawsome-core.xform.xforms.synonyms :refer [make-value-synonymizer
@@ -34,7 +34,7 @@
   ;; Xform phase, ordered xforms
   (defxform 'hoist make-hoist)
   (defxform 'remap-properties make-property-remapper)
-  (defxform 'reify (constantly reify-values))
+  (defxform 'reify make-reify-values)
   (defxform 'translate make-value-synonymizer)
   (defxform 'translate-paths make-path-specific-synonymizer)
   (defxform 'type-enforce make-value-type-filter)
