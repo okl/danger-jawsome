@@ -5,36 +5,41 @@
   (:require [roxxi.utils.print :refer [print-expr]])
   (:require [jawsome-dsl.core :refer [pipeline-interp
                                       field-order]])
-  (:require [jawsome-dsl.xform :refer [defxform]]))
+  (:import [java.io BufferedReader]))
+
+;; # The run multimethod
+
+;; Implementing run as a multimethod means that we can *separately* wrap each
+;; phase with its own appropriate CLI-specific logic. Yay clojure.
+
+;; Note that :denorm and :schema write their output with "prn",
+;; so that :project can read it back into Clojure structures.
 
 (defmulti run
   (fn [key fn opts]
     key))
 
 (defmethod run :denorm [_ denorm-fn _]
-  (doseq [line (line-seq (java.io.BufferedReader. *in*))]
-    ;;The inner doall is because a single record of input produces
-    ;; a (lazy) sequence of records of output.
+  (doseq [line (line-seq (BufferedReader. *in*))]
+    ;;The inner doall is because a single record of input yields
+    ;; a (lazy) sequence of records of output when denormalized.
     (doall
-     (map prn (denorm-fn line))))) ;; prn (not println) so that it can be read later
+     (map prn (denorm-fn line)))))
 
 (defmethod run :schema [_ schema-fn _]
-  ;;need function which, when invoked, gives you the schema
-  ;;  mebbe reads from schema file if it was precomputed
-  ;;  mebbe deserializes all the denorm output and computes it
-  ;;but this is not the place for such a function. This assumes it needs
-  ;;to deserialize all the denorm output to compute the schema
-  (let [denorm-stream (java.io.BufferedReader. *in*)
+  (let [denorm-stream (BufferedReader. *in*)
         cumulative-schema (schema-fn (line-seq denorm-stream))]
-    (prn cumulative-schema))) ;; prn (not println) so that it can be read later
+    (prn cumulative-schema)))
 
 (defmethod run :project [_ project-fn opts]
   (let [[denorm-output-path schema-output-path] opts
-        denorm-stream (java.io.BufferedReader. (clojure.java.io/reader denorm-output-path))
+        denorm-stream (BufferedReader. (clojure.java.io/reader denorm-output-path))
         schema (read-string (slurp schema-output-path))]
     (println (field-order schema))
     (doseq [line (line-seq denorm-stream)]
       (println (project-fn line schema))))) ;; TODO should this be prn or println?
+
+;; # Auto-generates the -main function that will dispatch to the run multimethod.
 
 (defmacro def-cli-pipeline [l2-form]
   `(defn ~(symbol "-main") [& args#]
