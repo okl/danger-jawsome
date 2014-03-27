@@ -9,9 +9,7 @@
             [jsonschema.type-system.extract :refer [extract-type-simplifying]]
             [jsonschema.type-system.simplify :refer [simplify-types]]
             [diesel.core :refer [definterpreter]]
-            [jawsome-dsl.xform :refer [defvar
-                                       defxform
-                                       l1-interp
+            [jawsome-dsl.xform :refer [l1-interp
                                        xform-registry]]
             [jawsome-dsl.separate-phases :refer [separate-phases]]
             [jawsome-dsl.init-registry :as reg]))
@@ -265,16 +263,6 @@
 (defmethod pipeline-interp :dethunk [[_ & stuff] env]
   (list* 'dethunk
          (map #(pipeline-interp % env) stuff)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Main
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn -main [pipeline]
-  (doseq [line (line-seq (java.io.BufferedReader. *in*))]
-    ;;The inner doall is because a single record of input produces
-    ;; a (lazy) sequence of records of output.
-    (doall
-     (map println (pipeline line)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TODO turn me into unit tests
