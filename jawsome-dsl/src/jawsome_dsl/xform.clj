@@ -98,31 +98,3 @@ map* is short hand for a sequence of 0 or more maps
 (defmethod l1-interp :dethunk [[_ thunk-val-expr] reg]
   (let [thunk (l1-interp thunk-val-expr reg)]
     (if (fn? thunk) (thunk) thunk)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Schema calculations
-;;
-;; For keeping track of the cumulative schema in parallel with the actual
-;; denormalization :)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn make-a-cumulative-schema []
-  (atom nil))
-
-(defn get-cumulative-schema [schema]
-  (deref schema))
-
-(defn mixin-schema! [new-schema cumulative-schema]
-  (swap! cumulative-schema #(if (nil? %)
-                                new-schema
-                                (simplify-types % new-schema))))
-
-(defn l1-interp-with-schema-fold [l1-forms xform-registry cumulative-schema]
-  (let [giant-composed-one-to-many-xform (l1-interp l1-forms xform-registry)]
-    (fn [one-in]
-      (let [many-out (giant-composed-one-to-many-xform one-in)
-            many-out-types (map extract-type-simplifying many-out)
-            for-side-effects (doall
-                              (map #(mixin-schema! % cumulative-schema)
-                                   many-out-types))]
-        many-out))))

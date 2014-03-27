@@ -3,16 +3,18 @@
   {:author "Matt Halverson"
    :date "2014/02/10"}
   (:require [clojure.tools.logging :as log]
+            [roxxi.utils.print :refer [print-expr]]
+            [roxxi.utils.common :refer [def-]])
+  (:require [cheshire.core :as cheshire]
+            [jsonschema.type-system.extract :refer [extract-type-simplifying]]
+            [jsonschema.type-system.simplify :refer [simplify-types]]
             [diesel.core :refer [definterpreter]]
             [jawsome-dsl.xform :refer [defvar
                                        defxform
-                                       l1-interp-with-schema-fold
-                                       make-a-cumulative-schema
-                                       get-cumulative-schema
+                                       l1-interp
                                        xform-registry]]
             [jawsome-dsl.separate-phases :refer [separate-phases]]
-            [jawsome-dsl.init-registry :as reg]
-            [roxxi.utils.print :refer [print-expr]]))
+            [jawsome-dsl.init-registry :as reg]))
 
 (defmacro log-and-throw [error-msg]
   `(do
@@ -48,7 +50,10 @@
   ['pipeline => :pipeline]
   ['read-phase => :read-phase]
   ['xform-phase => :xform-phase]
-  ['project-phase => :project-phase]
+  ['denorm-phase => :denorm-phase] ;; this is the one-to-many
+  ['schema-phase => :schema-phase] ;; this is the folding fxn (many-to-one)
+  ['project-phase => :project-phase] ;; this is the one-to-one
+  ['delimiter => :delimiter]
   ['xforms => :xforms]
   ['custom => :custom]
   ['ref => :ref]
@@ -65,22 +70,13 @@
 (reg/init)
 
 (defmethod pipeline-interp :pipeline [[_ & phases] env]
-  (log-and-return "l2 forms that came in: " (cons 'pipeline phases))
-  (let [separated (separate-phases phases)
-        interped (map #(pipeline-interp % env) separated)
-        concatted (concat (remove nil? interped))
-        project-phase (nth separated 2)]
-    (if project-phase
-      (log-and-throw (str "Project phase is not yet implemented; need to gather "
-                          "schema after the read phase, then project"))
-      (log-and-return
-       "l1 forms that came out: "
-       (list* 'xforms
-              "Top-level"
-              concatted)))))
+  (let [[denorm schema project] (map #(pipeline-interp % env) phases)]
+    {:denorm denorm
+     :schema schema
+     :project project}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Phase definitions. A read/xform phase has 0 or more blocks.
+;; Denorm phase definitions. A read/xform phase has 0 or more blocks.
 ;;
 ;; A block may have an *inherent order* (xforms block, in which the xforms will
 ;; be rearranged if necessary to lie in the inherent order), or it may be
@@ -102,18 +98,86 @@
            "Xform phase"
            (map #(pipeline-interp % new-env) xforms))))
 
-(defn project-onto-field-order [some-map field-order]
+(defmethod pipeline-interp :denorm-phase [[_ & phases] env]
+  (log-and-return "l2 forms that came in: " (cons 'pipeline phases))
+  (when (> (count phases) 2)
+    (log-and-throw (str "Project phase is not yet implemented; need to gather "
+                        "schema after the read phase, then project")))
+  (let [separated (separate-phases phases)
+        interped (map #(pipeline-interp % env) separated)
+        concatted (concat (remove nil? interped))
+        l1-forms (log-and-return
+                  "l1 forms that came out: "
+                  (list* 'xforms
+                         "Top-level"
+                         concatted))
+        denorm-fxn (l1-interp l1-forms (xform-registry))]
+    denorm-fxn))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Schema phase
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn- make-a-cumulative-schema []
+  (atom nil))
+
+(defn- get-cumulative-schema [schema]
+  (deref schema))
+
+(defn- mixin-schema! [cumulative-schema new-schema]
+  (swap! cumulative-schema #(if (nil? %)
+                                new-schema
+                                (simplify-types % new-schema))))
+
+(defn- ->clj-map [record]
+  (cond (map? record) record
+        (string? record) (read-string record)
+        :else (throw
+               (RuntimeException. (str "unexpected record-type for " record)))))
+
+(defmethod pipeline-interp :schema-phase [[_ & forms] env]
+  (fn [denormed-record-seq]
+    (let [cumulative-schema (make-a-cumulative-schema)]
+      (doseq [record denormed-record-seq]
+        (mixin-schema! cumulative-schema
+                       (extract-type-simplifying (->clj-map record))))
+      (get-cumulative-schema cumulative-schema))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Project phase
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn- project-onto-field-order [some-map field-order]
   (map #(get some-map %) field-order))
 
-(defn map->xsv [some-map cumulative-schema delimiter]
-  (let [fields (get cumulative-schema :properties)
-        sorted-fields (sort fields)
+(defn field-order [schema]
+  ;;TODO memoize me
+  (let [fields (get schema :properties)]
+    (sort fields)))
+
+(defn- map->xsv [some-map cumulative-schema delimiter]
+  (let [sorted-fields (field-order cumulative-schema)
         projected (project-onto-field-order some-map sorted-fields)]
     (clojure.string/join delimiter projected)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TODO turn me into unit tests
+
+;; (def a "{k1 1, k2_arr 100, k2_idx 0}")
+;; (def a-map {"k1" 1, "k2_arr" 100, "k2_idx" 0})
+;; (def b #jsonschema.type_system.types.Document{:properties #{"k2_idx" "k1" "k2_arr"}, :map {"k1" #jsonschema.type_system.types.Int{:min 1, :max 12}, "k2_arr" #jsonschema.type_system.types.Str{:min 2, :max 3}, "k2_idx" #jsonschema.type_system.types.Int{:min 0, :max 2}}})
+;; (def c "|")
+;; (map->xsv a-map b c)
+
 (defmethod pipeline-interp :project-phase [[_ & project-cfg] env]
-  (log/debug "Project-format cfg is" project-cfg)
-  nil)
+  (let [delimiter (pipeline-interp (first project-cfg) env)]
+    (fn [denormed-record cumulative-schema]
+      (map->xsv (->clj-map denormed-record)
+                cumulative-schema
+                delimiter))))
+
+(defmethod pipeline-interp :delimiter [[_ delimiter] env]
+  delimiter)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Block definitions. A block has 0 or more xforms.
@@ -205,51 +269,24 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defprotocol XformAndSchemaProtocol
-  (xform [_ m])
-  (schema-so-far [_]))
-
-(deftype XformAndSchema [actual-fxn cumulative-schema]
-  XformAndSchemaProtocol
-  (xform [_ m]
-    (actual-fxn m))
-  (schema-so-far [_]
-    (get-cumulative-schema cumulative-schema)))
-
-(defn pipeline->fn
-  ([l2]
-     (pipeline->fn l2 default-env))
-  ([l2 env]
-     (let [l1 (pipeline-interp l2 default-env)
-           cumulative-schema (make-a-cumulative-schema)
-           actual-fxn (l1-interp-with-schema-fold l1 (xform-registry) cumulative-schema)]
-       (XformAndSchema. actual-fxn cumulative-schema))))
-
-
-
-(def s (pipeline->fn
-        '(pipeline
-          (xform-phase
-           (xforms :reify :denorm)))))
-(schema-so-far s)
-(xform s {"k1" "12341234", "k2" ["10000asdfjl", "20000asdf"]})
-(schema-so-far s)
-
-(def a (pipeline->fn
-        '(pipeline
-          (xform-phase
-           (xforms :reify :denorm)))))
-(schema-so-far a)
-(xform a {"k1" "1", "k2" ["100", "200"]})
-(schema-so-far a)
-(xform a {"k1" "12", "k2" ["10", "200", "400"]})
-(schema-so-far a)
-
-
-
 (defn -main [pipeline]
   (doseq [line (line-seq (java.io.BufferedReader. *in*))]
     ;;The inner doall is because a single record of input produces
     ;; a (lazy) sequence of records of output.
     (doall
      (map println (pipeline line)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TODO turn me into unit tests
+(def p (pipeline-interp '(pipeline
+                          (denorm-phase (xform-phase (xforms :denorm)))
+                          (schema-phase)
+                          (project-phase (delimiter "|"))) {}))
+(def denorm (:denorm p))
+(def schema (:schema p))
+(def project (:project p))
+(def raw (list {"a" "1", "b" ["2" "34"]} {"foo" "bazzle"} {"foo" 123}))
+(def d (list {"a" "1", "b_arr" "2", "b_idx" 0} {"a" "1", "b_arr" "34", "b_idx" 1} {"foo" "bazzle"} {"foo" 123}))
+;;(println (schema d))
+(def s (schema d)) ;;#jsonschema.type_system.types.Document{:properties #{"b_idx" "b_arr" :foo :a}, :map {:foo #jsonschema.type_system.types.Union{:union-of #{#jsonschema.type_system.types.Str{:min 6, :max 6} #jsonschema.type_system.types.Int{:min 123, :max 123}}}, "b_idx" #jsonschema.type_system.types.Int{:min 0, :max 1}, "b_arr" #jsonschema.type_system.types.Str{:min 1, :max 2}, :a #jsonschema.type_system.types.Str{:min 1, :max 1}}})
+(map #(project % s) d)
