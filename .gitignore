@@ -14,3 +14,6 @@ pom.xml
 
 # Phabricator
 .arcrc
+
+# Leiningen
+*/checkouts/
