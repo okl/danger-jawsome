@@ -8,4 +8,5 @@
                  [com.onekingslane.danger/jawsome-core "0.3-SNAPSHOT"]
                  [com.onekingslane.danger/jawsome-dsl "0.3-SNAPSHOT"]]
   :profiles {:dev {:dependencies [[org.slf4j/slf4j-log4j12 "1.7.5"]]
-                   :resource-paths ["resources"]}})
+                   :resource-paths ["resources"]}}
+  :main jawsome-cli.core)
