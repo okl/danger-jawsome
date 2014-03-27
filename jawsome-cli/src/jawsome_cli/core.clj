@@ -5,7 +5,7 @@
   (:require [roxxi.utils.print :refer [print-expr]])
   (:require [jawsome-dsl.core :refer [pipeline-interp
                                       field-order]])
-  (:gen-class))
+  (:require [jawsome-dsl.xform :refer [defxform]]))
 
 (defmulti run
   (fn [key fn opts]
@@ -34,10 +34,10 @@
         schema (read-string (slurp schema-output-path))]
     (println (field-order schema))
     (doseq [line (line-seq denorm-stream)]
-      (println (project-fn line schema)))))
+      (println (project-fn line schema))))) ;; TODO should this be prn or println?
 
 (defmacro def-cli-pipeline [l2-form]
-  `(defn -main [& args#]
+  `(defn ~(symbol "-main") [& args#]
      (let [[phase# & opts#] args#
            phase-as-keyword# (keyword phase#)
            fxns# (pipeline-interp ~l2-form {})
@@ -45,29 +45,3 @@
        (run phase-as-keyword#
             phase-as-fxn#
             opts#))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; TODO turn me into unit tests
-
-(def my-pipeline
-  '(pipeline
-    (denorm-phase (read-phase (xforms :read-json))
-                  (xform-phase (xforms :reify :denorm)))
-    (schema-phase)
-    (project-phase (delimiter "|"))))
-
-(def-cli-pipeline my-pipeline)
-
-
-;; (def raw (list "{\"a\": \"1\", \"b\": [\"2\", \"34\"]}" "{\"foo\": \"bazzle\"}" "{\"foo\": 123}"))
-;; (with-in-str (reduce str (interpose "\n" (map str raw)))
-;;   (-main "denorm")) ;; write to /tmp/denorm
-
-;; (def d (list {"a" "1", "b_arr" "2", "b_idx" 0} {"a" "1", "b_arr" "34", "b_idx" 1} {"foo" "bazzle"} {"foo" 123}))
-;; (with-in-str (reduce str (interpose "\n" (map str d)))
-;;   (-main "schema")) ;; write to /tmp/sch
-
-;; (-main "project" "/tmp/denorm" "/tmp/sch")
-
-;;lein uberjar
-;;cat /tmp/raw | java -jar /Users/mhalverson/Code/okl/danger-jawsome/jawsome-cli/target/jawsome-cli-0.1.0-SNAPSHOT-standalone.jar denorm | tee /tmp/denorm | java -jar /Users/mhalverson/Code/okl/danger-jawsome/jawsome-cli/target/jawsome-cli-0.1.0-SNAPSHOT-standalone.jar schema > /tmp/schema ; java -jar /Users/mhalverson/Code/okl/danger-jawsome/jawsome-cli/target/jawsome-cli-0.1.0-SNAPSHOT-standalone.jar project /tmp/denorm /tmp/schema > /tmp/project
