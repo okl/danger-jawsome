@@ -167,15 +167,11 @@
 ;; (def c "|")
 ;; (map->xsv a-map b c)
 
-(defmethod pipeline-interp :project-phase [[_ & project-cfg] env]
-  (let [delimiter (pipeline-interp (first project-cfg) env)]
-    (fn [denormed-record cumulative-schema]
-      (map->xsv (->clj-map denormed-record)
-                cumulative-schema
-                delimiter))))
-
-(defmethod pipeline-interp :delimiter [[_ delimiter] env]
-  delimiter)
+(defmethod pipeline-interp :project-phase [[_ & forms] env]
+  (fn [denormed-record cumulative-schema delimiter]
+    (map->xsv (->clj-map denormed-record)
+              cumulative-schema
+              delimiter)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Block definitions. A block has 0 or more xforms.
