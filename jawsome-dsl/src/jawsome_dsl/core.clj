@@ -2,8 +2,7 @@
   "Implementing a mini-language for Jawsome pipelines"
   {:author "Matt Halverson"
    :date "2014/02/10"}
-  (:require [clojure.tools.logging :as log]
-            [roxxi.utils.print :refer [print-expr]]
+  (:require [roxxi.utils.print :refer [print-expr]]
             [roxxi.utils.common :refer [def-]])
   (:require [jsonschema.type-system.extract :refer [extract-type-simplifying]]
             [jsonschema.type-system.simplify :refer [simplify-types]]

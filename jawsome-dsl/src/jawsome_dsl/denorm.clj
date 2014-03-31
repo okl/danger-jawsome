@@ -3,7 +3,6 @@
   {:author "Matt Halverson"
    :date "2014/03/31"}
   (:require [roxxi.utils.print :refer [print-expr]])
-  (:require [clojure.tools.logging :as log])
   (:require [diesel.core :refer [definterpreter]])
   (:require [jawsome-dsl.utils :refer [log-and-throw
                                        log-and-return]]

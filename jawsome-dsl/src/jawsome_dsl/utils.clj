@@ -6,12 +6,12 @@
 
 (defmacro log-and-throw [error-msg]
   `(do
-     (log/error ~error-msg)
+     (clojure.tools.logging/error ~error-msg)
      (throw (RuntimeException. ~error-msg))))
 
 (defmacro log-and-return [prefix-string thing]
   `(do
      (let [pretty-thing# (with-out-str (clojure.pprint/pprint ~thing))
            cleaner-thing# (clojure.string/trim pretty-thing#)]
-       (log/info (str ~prefix-string "\n" cleaner-thing#))
+       (clojure.tools.logging/info (str ~prefix-string "\n" cleaner-thing#))
        ~thing)))
