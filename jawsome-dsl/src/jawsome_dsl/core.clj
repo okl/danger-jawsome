@@ -3,7 +3,6 @@
   {:author "Matt Halverson"
    :date "2014/02/10"}
   (:require [clojure.tools.logging :as log]
-            [cheshire.core :as cheshire]
             [roxxi.utils.print :refer [print-expr]]
             [roxxi.utils.common :refer [def-]])
   (:require [jsonschema.type-system.extract :refer [extract-type-simplifying]]
