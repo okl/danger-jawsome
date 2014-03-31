@@ -7,45 +7,6 @@
   (:require [jawsome-dsl.xform :refer [defxform]]))
 
 
-;;TODO this is the beginnings of jawsome-pipeline-searchpro
-(defn get-time [^String log-line]
-  (if (not (.startsWith log-line "["))
-    nil
-    (let [idx (.indexOf log-line "]")]
-      (subs log-line 1 idx))))
-
-(defn strip-up-to-first-curly [^String log-line]
-  (let [idx (.indexOf log-line "{")]
-    (if (= -1 idx)
-      log-line
-      (subs log-line idx))))
-
-(defn assoc-time-and-strip-start [log-line]
-  (let [timestamp (get-time log-line)
-        start-stripped (strip-up-to-first-curly log-line)
-        stripped (clojure.string/trim start-stripped)
-        len (count stripped)]
-    (if (not (.endsWith stripped "}"))
-      stripped
-      (str (subs stripped 0 (dec len))
-           ",\"timestamp\":\"" timestamp "\""
-           "}"))))
-
-(defxform 'assoc-time-and-strip-start
-  (constantly assoc-time-and-strip-start))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; main
-(def search-pipeline
-  '(pipeline
-    (denorm-phase (read-phase (custom :assoc-time-and-strip-start)
-                              (xforms :read-json))
-                  (xform-phase (xforms :reify :denorm)))
-    (schema-phase)
-    (project-phase)))
-
-(def-cli-pipeline search-pipeline)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TODO is this unit-test-worthy?
 
