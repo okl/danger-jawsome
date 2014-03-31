@@ -9,9 +9,7 @@
             [jsonschema.type-system.extract :refer [extract-type-simplifying]]
             [jsonschema.type-system.simplify :refer [simplify-types]]
             [diesel.core :refer [definterpreter]]
-            [jawsome-dsl.xform :refer [defvar
-                                       defxform
-                                       l1-interp
+            [jawsome-dsl.xform :refer [l1-interp
                                        xform-registry]]
             [jawsome-dsl.separate-phases :refer [separate-phases]]
             [jawsome-dsl.init-registry :as reg]))
@@ -169,15 +167,11 @@
 ;; (def c "|")
 ;; (map->xsv a-map b c)
 
-(defmethod pipeline-interp :project-phase [[_ & project-cfg] env]
-  (let [delimiter (pipeline-interp (first project-cfg) env)]
-    (fn [denormed-record cumulative-schema]
-      (map->xsv (->clj-map denormed-record)
-                cumulative-schema
-                delimiter))))
-
-(defmethod pipeline-interp :delimiter [[_ delimiter] env]
-  delimiter)
+(defmethod pipeline-interp :project-phase [[_ & forms] env]
+  (fn [denormed-record cumulative-schema delimiter]
+    (map->xsv (->clj-map denormed-record)
+              cumulative-schema
+              delimiter)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Block definitions. A block has 0 or more xforms.
@@ -265,16 +259,6 @@
 (defmethod pipeline-interp :dethunk [[_ & stuff] env]
   (list* 'dethunk
          (map #(pipeline-interp % env) stuff)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Main
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn -main [pipeline]
-  (doseq [line (line-seq (java.io.BufferedReader. *in*))]
-    ;;The inner doall is because a single record of input produces
-    ;; a (lazy) sequence of records of output.
-    (doall
-     (map println (pipeline line)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TODO turn me into unit tests
