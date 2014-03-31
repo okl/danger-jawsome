@@ -76,16 +76,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Project phase
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn- project-onto-field-order [some-map field-order]
-  (map #(get some-map %) field-order))
-
 (defn field-order [schema]
-  ;;TODO memoize me
   (let [fields (get schema :properties)]
     (sort fields)))
 
+(def- field-order-memoized
+  (memoize field-order))
+
+(defn- project-onto-field-order [some-map field-order]
+  (map #(get some-map %) field-order))
+
 (defn- map->xsv [some-map cumulative-schema delimiter]
-  (let [sorted-fields (field-order cumulative-schema)
+  (let [sorted-fields (field-order-memoized cumulative-schema)
         projected (project-onto-field-order some-map sorted-fields)]
     (clojure.string/join delimiter projected)))
 
