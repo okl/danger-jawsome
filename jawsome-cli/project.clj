@@ -9,5 +9,4 @@
                  [com.onekingslane.danger/jawsome-dsl "0.3-SNAPSHOT"]
                  [org.clojure/tools.cli "0.3.1"]]
   :profiles {:dev {:dependencies [[org.slf4j/slf4j-log4j12 "1.7.5"]]
-                   :resource-paths ["resources"]}}
-  :main jawsome-cli.test-pipeline)
+                   :resource-paths ["resources"]}})

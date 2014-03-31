@@ -5,9 +5,7 @@
   (:require [roxxi.utils.print :refer [print-expr]]
             [clojure.pprint :refer [pprint]]))
 
-(defn- read-phase?    [form] (= (first form) 'read-phase))
-(defn- xform-phase?   [form] (= (first form) 'xform-phase))
-(defn- project-phase? [form] (= (first form) 'project-phase))
+;; # Assertions
 
 (defn- assert-num-phases [coll phase min max]
   (when (or (< (count coll) min)
@@ -26,11 +24,29 @@
 (defn- assert-one [coll phase]
   (assert-num-phases coll phase 1 1))
 
-(defn separate-phases [phases]
-  (let [reads    (filter read-phase?    phases)
-        xforms   (filter xform-phase?   phases)
-        projects (filter project-phase? phases)]
+;; # Denorm-phase defns
+
+(defn- read-phase?  [form] (= (first form) 'read-phase))
+(defn- xform-phase? [form] (= (first form) 'xform-phase))
+
+(defn separate-denorm-phases [phases]
+  (let [reads  (filter read-phase?  phases)
+        xforms (filter xform-phase? phases)]
     (assert-zero-or-one reads "read")
     (assert-one xforms "xform")
+    [(first reads) (first xforms)]))
+
+;; # Top-level defns
+
+(defn- denorm-phase?  [form] (= (first form) 'denorm-phase))
+(defn- schema-phase?  [form] (= (first form) 'schema-phase))
+(defn- project-phase? [form] (= (first form) 'project-phase))
+
+(defn separate-top-level-phases [phases]
+  (let [denorms  (filter denorm-phase?  phases)
+        schemas  (filter schema-phase?  phases)
+        projects (filter project-phase? phases)]
+    (assert-zero-or-one denorms "denorm")
+    (assert-zero-or-one schemas "schema")
     (assert-zero-or-one projects "project")
-    [(first reads) (first xforms) (first projects)]))
+    [(first denorms) (first schemas) (first projects)]))
