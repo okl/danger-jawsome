@@ -24,6 +24,11 @@
 (defn- get-prop-from-env [env prop]
   (get env prop))
 
+(def env-to-disable-post-denorm-cleanup
+  (add-prop-to-env default-env :do-post-denorm-cleanup false))
+(defn- post-denorm-cleanup-disabled? [env]
+  (false? (get-prop-from-env env :do-post-denorm-cleanup)))
+
 (defn- add-ordering [env ordering]
   (add-prop-to-env env :xform-ordering ordering))
 (defn- get-ordering [env]
@@ -77,10 +82,16 @@
            (map #(denorm-interp % new-env) xforms))))
 
 (defmethod denorm-interp :xform-phase [[_ & xforms] env]
-  (let [new-env (add-ordering env reg/xform-phase-ordering)]
+  (let [new-env (add-ordering env reg/xform-phase-ordering)
+        explicit (map #(denorm-interp % new-env) xforms)
+        implicit (if (post-denorm-cleanup-disabled? env)
+                   []
+                   ['(xforms "Added by default"
+                             (xform (lookup sanitize-field-names))
+                             (xform (lookup remove-empty-strings)))])]
     (list* 'xforms
            "Xform phase"
-           (map #(denorm-interp % new-env) xforms))))
+           (concat explicit implicit))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Block definitions. A block has 0 or more xforms.

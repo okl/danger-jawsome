@@ -8,15 +8,22 @@
             [jawsome-core.reader.json.core :refer [make-json-reader-fn]])
   (:require [jawsome-core.xform.xforms.denormalize :refer [make-denormalize]]
             [jawsome-core.xform.xforms.hoist :refer [make-hoist]]
-            [jawsome-core.xform.xforms.property-mapping :refer [make-property-remapper]]
+            [jawsome-core.xform.xforms.property-mapping
+             :refer [make-property-remapper]]
             [jawsome-core.xform.xforms.pruning :refer [make-prune-nils
                                                        make-prune-paths]]
             [jawsome-core.xform.xforms.reify-values :refer [make-reify-values]]
-            [jawsome-core.xform.xforms.static-injection :refer [static-value-merge-fn
-                                                                default-value-merge-fn]]
-            [jawsome-core.xform.xforms.synonyms :refer [make-value-synonymizer
-                                                        make-path-specific-synonymizer]]
-            [jawsome-core.xform.xforms.value-type-filter :refer [make-value-type-filter]]))
+            [jawsome-core.xform.xforms.static-injection
+             :refer [static-value-merge-fn
+                     default-value-merge-fn]]
+            [jawsome-core.xform.xforms.synonyms
+             :refer [make-value-synonymizer
+                     make-path-specific-synonymizer]]
+            [jawsome-core.xform.xforms.value-type-filter
+             :refer [make-value-type-filter]]
+            [jawsome-core.xform.xforms.post-denorm-cleanup
+             :refer [make-sanitize-field-names
+                     make-remove-empty-string-fields]]))
 
 (defn init []
   ;;this should cause the other fxns in here to be loaded into the registry
@@ -49,16 +56,23 @@
      'type-enforce
      'denorm])
 
+  ;; Xform phase, xforms which are ENABLED BY DEFAULT and will
+  ;; occur after the rest of the xform-phase xforms, unless you
+  ;; pass in an environment that disables them such as
+  ;; `jawsome-dsl.denorm/env-to-disable-post-denorm-cleanup`
+  (defxform 'sanitize-field-names make-sanitize-field-names)
+  (defxform 'remove-empty-strings make-remove-empty-string-fields)
+
   ;; Xform phase, un-ordered xforms
   (defxform 'static-values static-value-merge-fn)
   (defxform 'default-values default-value-merge-fn)
   (defxform 'prune-nils make-prune-nils)
   (defxform 'prune-paths make-prune-paths)
+
   ;; TODO implement these:
   ;; - only
   ;; - drop-if-particular-kv-occurs (e.g. path='/server-status?auto')
   ;; - drop-if-had-to-type-enforce
   ;;it is worth remarking that the 'default ordered xforms'
   ;; can also be treated as library, of course.
-
-  nil)
+  )

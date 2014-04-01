@@ -5,18 +5,22 @@ jawsome-dsl.
 
 ## Usage
 
-This library boils down to the `def-cli-pipeline` macro.
-
-`def-cli-pipeline` takes a jawsome-dsl pipeline, and defines a main
- function which dispatches to the appropriate pipeline function. To
- make that the 'active' pipeline for a given project, set the
- namespace where it's defined to be the :main namespace in your
- project.clj.
+This library boils down to the `def-cli-pipeline`
+macro. `def-cli-pipeline` takes a jawsome-dsl pipeline s-expression,
+and defines a main function which dispatches to the appropriate pipeline
+function. To make that the 'active' pipeline for a given project, you
+need to do two things:
+  (1) set the namespace where it's defined to be the :main namespace
+      in your project.clj.
+  (2) add a `(:gen-class)` directive to the namespace where it's
+      defined.
 
 For example, if your pipeline is defined in namespace
 jawsome-pipeline-searchpro.core, you would add
   `:main jawsome-pipeline-searchpro.core`
-to the project.clj for jawsome-pipeline-searchpro and run
+to the project.clj for jawsome-pipeline-searchpro, add
+  `(:gen-class)`
+to the ns-macro at the top of jawsome-pipeline-searchpro.core, and run
   `lein uberjar`
 to generate jawsome-pipeline-searchpro-x.y.z-standalone.jar.
 

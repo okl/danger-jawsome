@@ -15,35 +15,46 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def- denorm-options
-  [[nil "--input RAW-JSON-FILEPATH" "(opt) path to consume raw JSON from. Defaults to stdin"
+  [[nil "--input RAW-JSON-FILEPATH"
+    "(opt) path to consume raw JSON from. Defaults to stdin"
     :default nil]
-   [nil "--output DENORM-FILEPATH" "(opt) path to write denormed records to. Defaults to stdout"
+   [nil "--output DENORM-FILEPATH"
+    "(opt) path to write denormed records to. Defaults to stdout"
     :default nil]
    ["-h" "--help"]])
 
 (def- schema-options
-  [[nil "--input DENORM-FILEPATH" "(opt) path to consume denormed records from. Defaults to stdin"
+  [[nil "--input DENORM-FILEPATH"
+    "(opt) path to consume denormed records from. Defaults to stdin"
     :default nil]
-   [nil "--output SCHEMA-FILEPATH" "(opt) path to write the cumulative schema to. Defaults to stdout"
+   [nil "--output SCHEMA-FILEPATH"
+    "(opt) path to write the cumulative schema to. Defaults to stdout"
     :default nil]
    ["-h" "--help"]])
 
 (def- project-options
- [[nil "--delimiter DELIM" "(opt) string to use as field delimiter"
+ [[nil "--delimiter DELIM"
+   "(opt) string to use as field delimiter"
    :default "|"]
   ;;TODO add record delimiter (as opposed to field delimiter)?
-  [nil "--input DENORM-FILEPATH" "(opt) path to consume denormed records from. Defaults to stdin"
+  [nil "--input DENORM-FILEPATH"
+   "(opt) path to consume denormed records from. Defaults to stdin"
    :default nil]
-  [nil "--schema-path SCHEMA-FILEPATH" "path to schema describing the denormed-record-stream"]
-  [nil "--header-path HEADER-FILEPATH" "(opt) path to write the xsv header to. Defaults to the value of --output"
+  [nil "--schema SCHEMA-FILEPATH"
+   "path to schema describing the denormed-record-stream"]
+  [nil "--header HEADER-FILEPATH"
+   "(opt) path to write the xsv header to. Defaults to the value of --output"
    :default nil]
-  [nil "--output OUTPUT-FILEPATH" "(opt) path to write xsv-projected records to. Defaults to stdout"
+  [nil "--output OUTPUT-FILEPATH"
+   "(opt) path to write xsv-projected records to. Defaults to stdout"
    :default nil]
   ["-h" "--help"]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; # Helper functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; ## Hygienic CLI
 
 (defn- usage [phase-name options-summary]
   (->> [(str "Usage: java -jar your-pipeline-x.y.z-standalone.jar " phase-name " [options]")
@@ -66,6 +77,22 @@
      errors
      (exit 1 (usage phase-name summary)))))
 
+;; ## IO: let's read from/write to a file, but default to *in*/*out*
+
+(defn- using-std-in [options]
+  (nil? (:input options)))
+(defn- using-std-out [options]
+  (nil? (:output options)))
+
+(defn- roll-me-a-reader [options]
+  (if (using-std-in options)
+    (java.io.BufferedReader. *in*)
+    (io/reader (:input options))))
+(defn- roll-me-a-writer [options]
+  (if (using-std-out options)
+    (java.io.BufferedWriter. *out*)
+    (io/writer (:output options))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; # The run multimethod
 ;;
@@ -86,17 +113,12 @@
     (doseq [denormed (denorm-fn raw-json)]
       (prn denormed))))
 
-(defn- using-std-in [options]
-  (nil? (:input options)))
-(defn- using-std-out [options]
-  (nil? (:output options)))
-
 (defmethod run :denorm [_ denorm-fn raw-options]
   (let [parsed (parse-opts raw-options denorm-options)
         options (:options parsed)]
     (exit-if-appropriate! "denorm" parsed)
-    (let [i (if (using-std-in options)  *in*  (io/reader (:input options)))
-          o (if (using-std-out options) *out* (io/writer (:output options)))]
+    (let [i (roll-me-a-reader options)
+          o (roll-me-a-writer options)]
       (binding [*in* i
                 *out* o]
         (denorm-core denorm-fn))
@@ -115,8 +137,8 @@
   (let [parsed (parse-opts raw-options schema-options)
         options (:options parsed)]
     (exit-if-appropriate! "schema" parsed)
-    (let [i (if (using-std-in options)  *in*  (io/reader (:input options)))
-          o (if (using-std-out options) *out* (io/writer (:output options)))]
+    (let [i (roll-me-a-reader options)
+          o (roll-me-a-writer options)]
       (binding [*in* i
                 *out* o]
         (schema-core schema-fn))
@@ -143,16 +165,16 @@
     (exit-if-appropriate! "project" parsed)
     (let [options (:options parsed)
           {denorm-path :input,
-           schema-path :schema-path,
+           schema-path :schema,
            output-path :output,
-           header-path :header-path,
+           header-path :header,
            delimiter :delimiter} options
 
           schema (read-string (slurp schema-path))
           header (format-fields schema delimiter)
 
-          i (if (using-std-in options)  *in*  (io/reader (:input options)))
-          o (if (using-std-out options) *out* (io/writer (:output options)))]
+          i (roll-me-a-reader options)
+          o (roll-me-a-writer options)]
       (binding [*in* i
                 *out* o]
         (project-core project-fn header-path header schema delimiter))

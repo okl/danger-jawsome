@@ -5,7 +5,7 @@
   (:require [clojure.test :refer :all])
   (:require [roxxi.utils.print :refer [print-expr]])
   (:require [jawsome-dsl.denorm :refer [denorm-interp
-                                        default-env]]
+                                        env-to-disable-post-denorm-cleanup]]
             [jawsome-dsl.xform :refer [defvar
                                        defxform
                                        l1-interp
@@ -24,26 +24,26 @@
                 '(denorm-phase
                   (xform-phase
                    (xforms :hoist (ref hoist-cfg) :reify :denorm)))
-                default-env)
+                env-to-disable-post-denorm-cleanup)
                good)))
       (testing "when the xforms are out of order"
         (is (= (denorm-interp
                 '(denorm-phase
                   (xform-phase
                    (xforms :hoist (ref hoist-cfg) :denorm :reify)))
-                default-env)
+                env-to-disable-post-denorm-cleanup)
                good))
         (is (= (denorm-interp
                 '(denorm-phase
                   (xform-phase
                    (xforms :denorm :hoist (ref hoist-cfg) :reify)))
-                default-env)
+                env-to-disable-post-denorm-cleanup)
                good))
         (is (= (denorm-interp
                 '(denorm-phase
                   (xform-phase
                    (xforms :reify :denorm :hoist (ref hoist-cfg))))
-                default-env)
+                env-to-disable-post-denorm-cleanup)
                good))))
     (testing "Can I have multiple xforms blocks to break the order"
       (is (= (denorm-interp
@@ -51,7 +51,7 @@
                 (xform-phase
                  (xforms :hoist (ref hoist-cfg) :reify :denorm)
                  (xforms :translate (ref foo))))
-              default-env)
+              env-to-disable-post-denorm-cleanup)
              '(xforms "Top-level"
                       (xforms "Xform phase"
                               (xforms "Xforms block"
@@ -75,7 +75,7 @@
                                    :translate (ref foo))
                            (custom :my-other-other-func)
                            (xforms :denorm)))
-            default-env)
+            env-to-disable-post-denorm-cleanup)
            '(xforms "Top-level"
                     (xforms "Read phase"
                             (xforms "Custom block"
@@ -99,7 +99,7 @@
   (testing "Ref should get translated into lookup"
     (is (= (denorm-interp
             '(denorm-phase (xform-phase (xforms :hoist (ref foo))))
-            default-env)
+            env-to-disable-post-denorm-cleanup)
            '(xforms "Top-level" (xforms "Xform phase" (xforms "Xforms block" (xform (lookup hoist) (lookup foo)))))))))
 
 (deftest dethunk-is-allowed
@@ -107,7 +107,7 @@
     (is (= (denorm-interp
             '(denorm-phase
               (xform-phase (xforms :hoist (dethunk (ref yield-hoist-cfg)))))
-            default-env)
+            env-to-disable-post-denorm-cleanup)
            '(xforms "Top-level" (xforms "Xform phase" (xforms "Xforms block" (xform (lookup hoist) (dethunk (lookup yield-hoist-cfg))))))))))
 
 (deftest big-fatty-but-realistic-denorm-phase
@@ -144,7 +144,7 @@
                                              "test_prop" 48}
                             :prune-nils)
                            (xforms :denorm)))
-            default-env)
+            env-to-disable-post-denorm-cleanup)
            '(xforms "Top-level"
                     (xforms "Read phase"
                             (xforms "Xforms block"
@@ -180,7 +180,7 @@ exception should be thrown"
            '(denorm-phase
              (read-phase
               (xforms :jk-not-a-real-xform-lol)))
-           default-env))))
+           env-to-disable-post-denorm-cleanup))))
     (is (thrown?
          RuntimeException
          (print-expr
@@ -188,7 +188,7 @@ exception should be thrown"
            '(denorm-phase
              (xform-phase
               (xforms :just-one-xform-which-is-bad)))
-           default-env))))
+           env-to-disable-post-denorm-cleanup))))
     (is (thrown?
          RuntimeException
          (print-expr
@@ -198,7 +198,7 @@ exception should be thrown"
               (xforms :reify :bad-xform-name :denorm (ref hoist-cfg))
               (custom :shawns-fn)
               (xforms :translate (ref foo))))
-           default-env))))
+           env-to-disable-post-denorm-cleanup))))
     (is (thrown?
          RuntimeException
          (print-expr
@@ -207,7 +207,7 @@ exception should be thrown"
              (xform-phase
               (xforms :reify :hoist :bad-with-args (ref hoist-cfg))
               (custom :shawns-fn)))
-           default-env))))
+           env-to-disable-post-denorm-cleanup))))
     (is (thrown?
          RuntimeException
          (print-expr
@@ -216,7 +216,7 @@ exception should be thrown"
              (xform-phase
               (xforms :first-is-bad :hoist :denorm (ref hoist-cfg))
               (custom :shawns-fn)))
-           default-env))))
+           env-to-disable-post-denorm-cleanup))))
     (is (thrown?
          RuntimeException
          (print-expr
@@ -225,7 +225,7 @@ exception should be thrown"
              (xform-phase
               (xforms :reify :hoist :denorm (ref hoist-cfg) :last-is-bad)
               (custom :shawns-fn)))
-           default-env)))))
+           env-to-disable-post-denorm-cleanup)))))
   (testing "If an unrecognized xform appears in an un-ordered xforms block, no
 exception should be thrown."
     (is (not (empty? (denorm-interp
@@ -233,13 +233,13 @@ exception should be thrown."
                         (xform-phase
                          (xforms :reify :hoist :denorm (ref hoist-cfg))
                          (custom :shawns-fn)))
-                      default-env))))
+                      env-to-disable-post-denorm-cleanup))))
     (is (not (empty? (denorm-interp
                       '(denorm-phase
                         (xform-phase
                          (xforms :reify :hoist :denorm (ref hoist-cfg))
                          (custom :this-can-be-a-bad-xform-name)))
-                      default-env))))))
+                      env-to-disable-post-denorm-cleanup))))))
 
 
 
@@ -251,14 +251,14 @@ exception should be thrown."
                 (denorm-interp
                  '(denorm-phase
                    (xform-phase (xforms :reify)))
-                 default-env)))))
+                 env-to-disable-post-denorm-cleanup)))))
     (testing "one"
       (is (not (empty?
                 (denorm-interp
                  '(denorm-phase
                    (read-phase (xforms :remove-cruft))
                    (xform-phase (xforms :reify)))
-                 default-env))))))
+                 env-to-disable-post-denorm-cleanup))))))
   (testing "May not have more than one read phase"
     (is (thrown?
          RuntimeException
@@ -267,7 +267,7 @@ exception should be thrown."
             (read-phase (xforms :remove-cruft))
             (read-phase (xforms :unicode-recode))
             (xform-phase (xforms :reify)))
-          default-env)))))
+          env-to-disable-post-denorm-cleanup)))))
 
 (deftest must-have-exactly-one-xform-phase
   (testing "Must have exactly one xform phase"
@@ -276,7 +276,7 @@ exception should be thrown."
                '(denorm-phase
                  (read-phase (xforms :remove-cruft))
                  (xform-phase (xforms :reify)))
-               default-env)))))
+               env-to-disable-post-denorm-cleanup)))))
   (testing "Number of xform phases may not be"
     (testing "zero"
       (is (thrown?
@@ -284,7 +284,7 @@ exception should be thrown."
            (denorm-interp
             '(denorm-phase
               (read-phase (xforms :remove-cruft)))
-            default-env))))
+            env-to-disable-post-denorm-cleanup))))
     (testing "one"
       (is (thrown?
            RuntimeException
@@ -293,7 +293,35 @@ exception should be thrown."
               (read-phase (xforms :remove-cruft))
               (xform-phase (xforms :reify-values))
               (xform-phase (xforms :prune-nils)))
-            default-env))))))
+            env-to-disable-post-denorm-cleanup))))))
+
+(deftest post-denorm-cleanup-xforms-only-get-added-once
+  (testing "If we have multiple xforms blocks with an xform-phase, we still
+only want the post-denorm cleanup xforms to get added once, after the final
+defined xforms block"
+    (is (= (denorm-interp '(denorm-phase (read-phase (xforms :read-json))
+                                         (xform-phase (custom :foo)
+                                                      (xforms :reify :denorm)
+                                                      (custom :bar)
+                                                      (xforms :hoist {}))) {})
+           '(xforms
+             "Top-level"
+             (xforms
+              "Read phase"
+              (xforms "Xforms block" (xform (lookup read-json))))
+             (xforms
+              "Xform phase"
+              (xforms "Custom block" (xform (lookup foo)))
+              (xforms
+               "Xforms block"
+               (xform (lookup reify))
+               (xform (lookup denorm)))
+              (xforms "Custom block" (xform (lookup bar)))
+              (xforms "Xforms block" (xform (lookup hoist) {}))
+              (xforms
+               "Added by default"
+               (xform (lookup sanitize-field-names))
+               (xform (lookup remove-empty-strings)))))))))
 
 (deftest end-to-end-test
   (testing "End-to-end test to see if we can convert an l2 to an l1 to
@@ -301,7 +329,7 @@ an actual clojure function for a denorm-phase with"
     (testing "just an xform phase"
       (let [l2 '(denorm-phase
                  (xform-phase (xforms :reify :denorm)))
-            l1 (denorm-interp l2 default-env)
+            l1 (denorm-interp l2 env-to-disable-post-denorm-cleanup)
             denorm-phase (l1-interp l1 (xform-registry))
             test-record {"flatten" {"me" "foobar"}
                          "denorm_prop" ["a" "b"]}]
@@ -316,7 +344,7 @@ an actual clojure function for a denorm-phase with"
       (let [l2 '(denorm-phase
                  (read-phase (xforms :read-json))
                  (xform-phase (xforms :reify :denorm)))
-            l1 (denorm-interp l2 default-env)
+            l1 (denorm-interp l2 env-to-disable-post-denorm-cleanup)
             denorm-phase (l1-interp l1 (xform-registry))
             test-record "{\"flatten\": {\"me\": \"foobar\"}, \"denorm_prop\": [\"a\", \"b\"]}"]
         (is (= (denorm-phase test-record)
