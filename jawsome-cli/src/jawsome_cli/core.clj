@@ -54,6 +54,8 @@
 ;; # Helper functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; ## Hygienic CLI
+
 (defn- usage [phase-name options-summary]
   (->> [(str "Usage: java -jar your-pipeline-x.y.z-standalone.jar " phase-name " [options]")
         ""
@@ -75,6 +77,22 @@
      errors
      (exit 1 (usage phase-name summary)))))
 
+;; ## IO: let's read from/write to a file, but default to *in*/*out*
+
+(defn- using-std-in [options]
+  (nil? (:input options)))
+(defn- using-std-out [options]
+  (nil? (:output options)))
+
+(defn- roll-me-a-reader [options]
+  (if (using-std-in options)
+    (java.io.BufferedReader. *in*)
+    (io/reader (:input options))))
+(defn- roll-me-a-writer [options]
+  (if (using-std-out options)
+    (java.io.BufferedWriter. *out*)
+    (io/writer (:output options))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; # The run multimethod
 ;;
@@ -95,17 +113,12 @@
     (doseq [denormed (denorm-fn raw-json)]
       (prn denormed))))
 
-(defn- using-std-in [options]
-  (nil? (:input options)))
-(defn- using-std-out [options]
-  (nil? (:output options)))
-
 (defmethod run :denorm [_ denorm-fn raw-options]
   (let [parsed (parse-opts raw-options denorm-options)
         options (:options parsed)]
     (exit-if-appropriate! "denorm" parsed)
-    (let [i (if (using-std-in options)  *in*  (io/reader (:input options)))
-          o (if (using-std-out options) *out* (io/writer (:output options)))]
+    (let [i (roll-me-a-reader options)
+          o (roll-me-a-writer options)]
       (binding [*in* i
                 *out* o]
         (denorm-core denorm-fn))
@@ -124,8 +137,8 @@
   (let [parsed (parse-opts raw-options schema-options)
         options (:options parsed)]
     (exit-if-appropriate! "schema" parsed)
-    (let [i (if (using-std-in options)  *in*  (io/reader (:input options)))
-          o (if (using-std-out options) *out* (io/writer (:output options)))]
+    (let [i (roll-me-a-reader options)
+          o (roll-me-a-writer options)]
       (binding [*in* i
                 *out* o]
         (schema-core schema-fn))
@@ -160,8 +173,8 @@
           schema (read-string (slurp schema-path))
           header (format-fields schema delimiter)
 
-          i (if (using-std-in options)  *in*  (io/reader (:input options)))
-          o (if (using-std-out options) *out* (io/writer (:output options)))]
+          i (roll-me-a-reader options)
+          o (roll-me-a-writer options)]
       (binding [*in* i
                 *out* o]
         (project-core project-fn header-path header schema delimiter))
