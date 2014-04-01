@@ -295,6 +295,34 @@ exception should be thrown."
               (xform-phase (xforms :prune-nils)))
             env-to-disable-post-denorm-cleanup))))))
 
+(deftest post-denorm-cleanup-xforms-only-get-added-once
+  (testing "If we have multiple xforms blocks with an xform-phase, we still
+only want the post-denorm cleanup xforms to get added once, after the final
+defined xforms block"
+    (is (= (denorm-interp '(denorm-phase (read-phase (xforms :read-json))
+                                         (xform-phase (custom :foo)
+                                                      (xforms :reify :denorm)
+                                                      (custom :bar)
+                                                      (xforms :hoist {}))) {})
+           '(xforms
+             "Top-level"
+             (xforms
+              "Read phase"
+              (xforms "Xforms block" (xform (lookup read-json))))
+             (xforms
+              "Xform phase"
+              (xforms "Custom block" (xform (lookup foo)))
+              (xforms
+               "Xforms block"
+               (xform (lookup reify))
+               (xform (lookup denorm)))
+              (xforms "Custom block" (xform (lookup bar)))
+              (xforms "Xforms block" (xform (lookup hoist) {}))
+              (xforms
+               "Added by default"
+               (xform (lookup sanitize-field-names))
+               (xform (lookup remove-empty-strings)))))))))
+
 (deftest end-to-end-test
   (testing "End-to-end test to see if we can convert an l2 to an l1 to
 an actual clojure function for a denorm-phase with"
