@@ -15,29 +15,38 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def- denorm-options
-  [[nil "--input RAW-JSON-FILEPATH" "(opt) path to consume raw JSON from. Defaults to stdin"
+  [[nil "--input RAW-JSON-FILEPATH"
+    "(opt) path to consume raw JSON from. Defaults to stdin"
     :default nil]
-   [nil "--output DENORM-FILEPATH" "(opt) path to write denormed records to. Defaults to stdout"
+   [nil "--output DENORM-FILEPATH"
+    "(opt) path to write denormed records to. Defaults to stdout"
     :default nil]
    ["-h" "--help"]])
 
 (def- schema-options
-  [[nil "--input DENORM-FILEPATH" "(opt) path to consume denormed records from. Defaults to stdin"
+  [[nil "--input DENORM-FILEPATH"
+    "(opt) path to consume denormed records from. Defaults to stdin"
     :default nil]
-   [nil "--output SCHEMA-FILEPATH" "(opt) path to write the cumulative schema to. Defaults to stdout"
+   [nil "--output SCHEMA-FILEPATH"
+    "(opt) path to write the cumulative schema to. Defaults to stdout"
     :default nil]
    ["-h" "--help"]])
 
 (def- project-options
- [[nil "--delimiter DELIM" "(opt) string to use as field delimiter"
+ [[nil "--delimiter DELIM"
+   "(opt) string to use as field delimiter"
    :default "|"]
   ;;TODO add record delimiter (as opposed to field delimiter)?
-  [nil "--input DENORM-FILEPATH" "(opt) path to consume denormed records from. Defaults to stdin"
+  [nil "--input DENORM-FILEPATH"
+   "(opt) path to consume denormed records from. Defaults to stdin"
    :default nil]
-  [nil "--schema-path SCHEMA-FILEPATH" "path to schema describing the denormed-record-stream"]
-  [nil "--header-path HEADER-FILEPATH" "(opt) path to write the xsv header to. Defaults to the value of --output"
+  [nil "--schema-path SCHEMA-FILEPATH"
+   "path to schema describing the denormed-record-stream"]
+  [nil "--header-path HEADER-FILEPATH"
+   "(opt) path to write the xsv header to. Defaults to the value of --output"
    :default nil]
-  [nil "--output OUTPUT-FILEPATH" "(opt) path to write xsv-projected records to. Defaults to stdout"
+  [nil "--output OUTPUT-FILEPATH"
+   "(opt) path to write xsv-projected records to. Defaults to stdout"
    :default nil]
   ["-h" "--help"]])
 
