@@ -40,9 +40,9 @@
   [nil "--input DENORM-FILEPATH"
    "(opt) path to consume denormed records from. Defaults to stdin"
    :default nil]
-  [nil "--schema-path SCHEMA-FILEPATH"
+  [nil "--schema SCHEMA-FILEPATH"
    "path to schema describing the denormed-record-stream"]
-  [nil "--header-path HEADER-FILEPATH"
+  [nil "--header HEADER-FILEPATH"
    "(opt) path to write the xsv header to. Defaults to the value of --output"
    :default nil]
   [nil "--output OUTPUT-FILEPATH"
@@ -165,9 +165,9 @@
     (exit-if-appropriate! "project" parsed)
     (let [options (:options parsed)
           {denorm-path :input,
-           schema-path :schema-path,
+           schema-path :schema,
            output-path :output,
-           header-path :header-path,
+           header-path :header,
            delimiter :delimiter} options
 
           schema (read-string (slurp schema-path))
