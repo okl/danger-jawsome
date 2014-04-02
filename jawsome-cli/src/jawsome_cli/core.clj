@@ -30,13 +30,19 @@
    [nil "--output SCHEMA-FILEPATH"
     "(opt) path to write the cumulative schema to. Defaults to stdout"
     :default nil]
+   [nil "--field-order FIELD-ORDER-FILEPATH"
+    "(opt) path to write the field-order to. If unspecified, the field-order
+will not be written anywhere at all. Delimiter will be newline."
+    :default nil]
    ["-h" "--help"]])
 
 (def- project-options
  [[nil "--delimiter DELIM"
-   "(opt) string to use as field delimiter"
-   :default "|"]
-  ;;TODO add record delimiter (as opposed to field delimiter)?
+   "(opt) string to use as field delimiter. Defaults to tab"
+   :default "\t"]
+  [nil "--record-terminator TERM"
+   "(opt) string to use as record terminator. Defaults to newline"
+   :default "\n"]
   [nil "--input DENORM-FILEPATH"
    "(opt) path to consume denormed records from. Defaults to stdin"
    :default nil]
@@ -79,17 +85,17 @@
 
 ;; ## IO: let's read from/write to a file, but default to *in*/*out*
 
-(defn- using-std-in [options]
+(defn- using-std-in? [options]
   (nil? (:input options)))
-(defn- using-std-out [options]
+(defn- using-std-out? [options]
   (nil? (:output options)))
 
 (defn- roll-me-a-reader [options]
-  (if (using-std-in options)
+  (if (using-std-in? options)
     (java.io.BufferedReader. *in*)
     (io/reader (:input options))))
 (defn- roll-me-a-writer [options]
-  (if (using-std-out options)
+  (if (using-std-out? options)
     (java.io.BufferedWriter. *out*)
     (io/writer (:output options))))
 
@@ -122,15 +128,21 @@
       (binding [*in* i
                 *out* o]
         (denorm-core denorm-fn))
-      (when-not (using-std-in options)
+      (when-not (using-std-in? options)
         (.close i))
-      (when-not (using-std-out options)
+      (when-not (using-std-out? options)
         (.close o)))))
 
 ;; ## Schema
 
-(defn- schema-core [schema-fn]
+(defn- format-fields [schema delimiter]
+  (let [ordered-fields (field-order schema)]
+    (print-str (clojure.string/join delimiter ordered-fields))))
+
+(defn- schema-core [schema-fn field-order-path]
   (let [cumulative-schema (schema-fn (line-seq *in*))]
+    (when field-order-path
+      (spit field-order-path (format-fields cumulative-schema "\n")))
     (prn cumulative-schema)))
 
 (defmethod run :schema [_ schema-fn raw-options]
@@ -138,27 +150,27 @@
         options (:options parsed)]
     (exit-if-appropriate! "schema" parsed)
     (let [i (roll-me-a-reader options)
-          o (roll-me-a-writer options)]
+          o (roll-me-a-writer options)
+          field-order-path (:field-order options)]
       (binding [*in* i
                 *out* o]
-        (schema-core schema-fn))
-      (when-not (using-std-in options)
+        (schema-core schema-fn field-order-path))
+      (when-not (using-std-in? options)
         (.close i))
-      (when-not (using-std-out options)
+      (when-not (using-std-out? options)
         (.close o)))))
 
 ;; ## Project
 
-(defn- format-fields [schema delimiter]
-  (let [ordered-fields (field-order schema)]
-    (print-str (clojure.string/join delimiter ordered-fields))))
-
-(defn- project-core [project-fn header-path header schema delimiter]
+(defn- project-core [project-fn header-path header schema delimiter record-terminator]
   (if header-path
     (spit header-path header)
-    (println header))
+    (do (print header)
+        (print record-terminator)))
   (doseq [line (line-seq *in*)]
-    (println (project-fn line schema delimiter))))
+    (print (project-fn line schema delimiter))
+    (print record-terminator))
+  (flush)) ;; print doesn't call `flush`... only println does!
 
 (defmethod run :project [_ project-fn raw-options]
   (let [parsed (parse-opts raw-options project-options)]
@@ -168,7 +180,8 @@
            schema-path :schema,
            output-path :output,
            header-path :header,
-           delimiter :delimiter} options
+           delimiter :delimiter,
+           record-terminator :record-terminator} options
 
           schema (read-string (slurp schema-path))
           header (format-fields schema delimiter)
@@ -177,10 +190,15 @@
           o (roll-me-a-writer options)]
       (binding [*in* i
                 *out* o]
-        (project-core project-fn header-path header schema delimiter))
-      (when-not (using-std-in options)
+        (project-core project-fn
+                      header-path
+                      header
+                      schema
+                      delimiter
+                      record-terminator))
+      (when-not (using-std-in? options)
         (.close i))
-      (when-not (using-std-out options)
+      (when-not (using-std-out? options)
         (.close o)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
