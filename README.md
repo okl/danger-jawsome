@@ -17,6 +17,8 @@ parts of our company. Analytics on JSON (semi-structured) data is very
 challenging, and while there are many tools out there, there are a lot
 of trade offs. I want speed, I want SQL, and I want consistency.
 
+There are no real problems. I don't care.
+
 ## Where does JSON data come from?
 
 Here's a list of sources at One Kings Lane that generate JSON data
