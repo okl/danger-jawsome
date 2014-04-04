@@ -18,8 +18,6 @@ challenging, and while there are many tools out there, there are a lot
 of trade offs. I want speed, I want SQL, and I want consistency.
 
 
-My name is megan.
-
 ## Where does JSON data come from?
 
 Here's a list of sources at One Kings Lane that generate JSON data
