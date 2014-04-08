@@ -32,7 +32,9 @@
     :default nil]
    [nil "--field-order FIELD-ORDER-FILEPATH"
     "(opt) path to write the field-order to. If unspecified, the field-order
-will not be written anywhere at all. Delimiter will be newline."
+will not be written anywhere at all. Column names will be delimited by newlines.
+This option is provided in case you want to know what the project-phase header
+will look like before you actually get to the project phase."
     :default nil]
    ["-h" "--help"]])
 
@@ -49,7 +51,8 @@ will not be written anywhere at all. Delimiter will be newline."
   [nil "--schema SCHEMA-FILEPATH"
    "path to schema describing the denormed-record-stream"]
   [nil "--header HEADER-FILEPATH"
-   "(opt) path to write the xsv header to. Defaults to the value of --output"
+   "(opt) path to write the xsv header to. Defaults to the value of --output.
+Column names will be delimited by --delimiter"
    :default nil]
   [nil "--output OUTPUT-FILEPATH"
    "(opt) path to write xsv-projected records to. Defaults to stdout"
