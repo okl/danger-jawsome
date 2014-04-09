@@ -89,6 +89,9 @@
         projected (project-onto-field-order some-map sorted-fields)]
     (clojure.string/join delimiter projected)))
 
+(defn wrap-field-names-with-a-faux-schema [field-names]
+  {:properties field-names})
+
 (defmethod pipeline-interp :project-phase [[_ & forms] env]
   (fn [denormed-record cumulative-schema delimiter]
     (map->xsv (->clj-map denormed-record)
