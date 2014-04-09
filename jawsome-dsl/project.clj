@@ -11,4 +11,5 @@
                  [com.onekingslane.danger/jawsome-core "1.0.0"]]
   :profiles {:dev {:dependencies [[org.slf4j/slf4j-log4j12 "1.7.5"]]
                    :resource-paths ["resources"]}}
+  :aliases {"deploy" ["deploy" "clojars"]}
   :main jawsome-dsl.core)

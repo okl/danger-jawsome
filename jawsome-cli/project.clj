@@ -8,4 +8,5 @@
                  [com.onekingslane.danger/jawsome-dsl "1.1.0"]
                  [org.clojure/tools.cli "0.3.1"]]
   :profiles {:dev {:dependencies [[org.slf4j/slf4j-log4j12 "1.7.5"]]
-                   :resource-paths ["resources"]}})
+                   :resource-paths ["resources"]}}
+  :aliases {"deploy" ["deploy" "clojars"]})
