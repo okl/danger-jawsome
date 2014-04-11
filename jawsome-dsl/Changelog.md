@@ -1,3 +1,12 @@
+# 1.2.0
+
+Got rid of `wrap-field-names-with-a-faux-schema`. Now, the
+project-phase function takes either a schema OR a set of fields as its
+second argument.
+
+Also, you can specify the field-order for the projected xsv data now,
+instead of being forced into using alphabetical order.
+
 # 1.1.0
 
 Added `wrap-field-names-with-a-faux-schema`, which allows you to

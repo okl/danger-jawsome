@@ -1,4 +1,4 @@
-(defproject com.onekingslane.danger/jawsome-dsl "1.1.0"
+(defproject com.onekingslane.danger/jawsome-dsl "1.2.0"
   :description "DSL for jawsome pipelines"
   :url "http://www.github.com/okl/danger-jawsome"
   :license {:name "Eclipse Public License"

@@ -6,6 +6,7 @@
             [roxxi.utils.common :refer [def-]])
   (:require [jsonschema.type-system.extract :refer [extract-type-simplifying]]
             [jsonschema.type-system.simplify :refer [simplify-types]]
+            [jsonschema.type-system.types :refer [document-type?]]
             [diesel.core :refer [definterpreter]])
   (:require [jawsome-dsl.denorm :as denorm]
             [jawsome-dsl.separate-phases :refer [separate-top-level-phases]]))
@@ -70,30 +71,39 @@
                        (extract-type-simplifying (->clj-map record))))
       (get-cumulative-schema cumulative-schema))))
 
+(defn fields [schema]
+  (get schema :properties))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Project phase
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn field-order [schema]
-  (let [fields (get schema :properties)]
-    (sort fields)))
+(defn sort-fields [fields]
+  (sort fields))
+(def field-order sort-fields)
 
-(def- field-order-memoized
-  (memoize field-order))
+(def- sort-fields-memoized
+  (memoize sort-fields))
 
 (defn- project-onto-field-order [some-map field-order]
   (map #(get some-map %) field-order))
 
-(defn- map->xsv [some-map cumulative-schema delimiter]
-  (let [sorted-fields (field-order-memoized cumulative-schema)
-        projected (project-onto-field-order some-map sorted-fields)]
+(defn- map->xsv [some-map field-names delimiter should-sort-fields]
+  (let [ordered-fields (if should-sort-fields
+                        (sort-fields-memoized field-names)
+                        field-names)
+        projected (project-onto-field-order some-map ordered-fields)]
     (clojure.string/join delimiter projected)))
 
-(defn wrap-field-names-with-a-faux-schema [field-names]
-  {:properties field-names})
-
 (defmethod pipeline-interp :project-phase [[_ & forms] env]
-  (fn [denormed-record cumulative-schema delimiter]
-    (map->xsv (->clj-map denormed-record)
-              cumulative-schema
-              delimiter)))
+  ;; I know, it's kinda of ugly to use field-names-or-schema.
+  ;; But it's simpler from a usage standpoint to be able to
+  ;; directly pass in the schema you get out of the schema phase.
+  (fn [denormed-record field-names-or-schema delimiter & {:keys [sort-fields]
+                                                          :or {sort-fields true}}]
+    (let [field-names (if (document-type? field-names-or-schema)
+                        (fields field-names-or-schema)
+                        field-names-or-schema)]
+      (map->xsv (->clj-map denormed-record)
+                field-names
+                delimiter
+                sort-fields))))

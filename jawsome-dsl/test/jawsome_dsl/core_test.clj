@@ -7,8 +7,8 @@
   (:require [jsonschema.type-system.types :as types])
   (:require [jawsome-dsl.core :refer [pipeline-interp
                                       default-env
-                                      field-order
-                                      wrap-field-names-with-a-faux-schema]]))
+                                      fields
+                                      field-order]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialize some constants
@@ -28,7 +28,7 @@
                {"foo" 123}))
 (def d (denorm raw))
 (def s (schema d))
-(def header (field-order s))
+(def header (field-order (fields s)))
 (def what-header-should-be (list "a"
                                  "b_arr"
                                  "b_idx"
@@ -55,13 +55,17 @@
     (is (= header what-header-should-be))
     (is (= p what-p-should-be))))
 
-(deftest wrap-field-names-with-a-faux-schema-test
-  (let [faux-s (wrap-field-names-with-a-faux-schema (:properties s))
-        p-from-faux-schema (map #(project % faux-s "|") d)]
-    (is (not= s
-              faux-s))
-    (is (= p-from-faux-schema
-           what-p-should-be))))
+(deftest may-supply-your-own-fields-and-field-order
+  (let [reversed (reverse header)]
+    (testing "Sometimes we want to have the fields NOT be in alphabetical order"
+      (is (= (map #(project % reversed "|" :sort-fields false) d)
+             (list "|0|2|1"
+                   "|1|34|1"
+                   "bazzle|||"
+                   "123|||"))))
+    (testing "If sort-fields is true, then they should get alphabetized"
+      (is (= (map #(project % reversed "|" :sort-fields true) d)
+             what-p-should-be)))))
 
 (deftest may-have-zero-or-one-of-each-phase
   (testing "There may either be zero or one"
