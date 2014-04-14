@@ -164,7 +164,7 @@ Column names will be delimited by --delimiter"
 ;; ## Schema
 
 (defn- format-fields [schema delimiter]
-  (let [ordered-fields (field-order schema)]
+  (let [ordered-fields (field-order (fields schema))]
     (print-str (clojure.string/join delimiter ordered-fields))))
 
 (defn- schema-core [schema-fn field-order-path]
