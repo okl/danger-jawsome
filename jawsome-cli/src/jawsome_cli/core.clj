@@ -8,11 +8,23 @@
                                       field-order
                                       default-env]])
   (:require [clojure.tools.cli :refer [parse-opts]])
+  (:require [clojure.tools.logging :as log])
   (:require [clojure.java.io :as io]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; # CLI options definitions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def- pass-thru-option
+  ["-X" "--X PASSTHROUGH-CUSTOM-ARG"
+   "(opt) If you want to pass through some custom args, simply
+use the -X option. You can use as many -Xs as you need; the args will be
+passed through as a vector, in order from left to right."
+   :default {}
+   :assoc-fn (fn [m X kv]
+               (let [splits (clojure.string/split kv #":" 2)
+                     k (first splits)
+                     v (second splits)]
+                 (update-in m [X] #(assoc % k v))))])
 
 (def- denorm-options
   [[nil "--input RAW-JSON-FILEPATH"
@@ -21,6 +33,7 @@
    [nil "--output DENORM-FILEPATH"
     "(opt) path to write denormed records to. Defaults to stdout"
     :default nil]
+   pass-thru-option
    ["-h" "--help"]])
 
 (def- schema-options
@@ -36,15 +49,18 @@ will not be written anywhere at all. Column names will be delimited by newlines.
 This option is provided in case you want to know what the project-phase header
 will look like before you actually get to the project phase."
     :default nil]
+   pass-thru-option
    ["-h" "--help"]])
 
 (def- project-options
  [[nil "--delimiter DELIM"
    "(opt) string to use as field delimiter. Defaults to tab"
-   :default "\t"]
+   :default "\t"
+   :default-desc "tab"]
   [nil "--record-terminator TERM"
    "(opt) string to use as record terminator. Defaults to newline"
-   :default "\n"]
+   :default "\n"
+   :default-desc "newline"]
   [nil "--input DENORM-FILEPATH"
    "(opt) path to consume denormed records from. Defaults to stdin"
    :default nil]
@@ -57,6 +73,7 @@ Column names will be delimited by --delimiter"
   [nil "--output OUTPUT-FILEPATH"
    "(opt) path to write xsv-projected records to. Defaults to stdout"
    :default nil]
+  pass-thru-option
   ["-h" "--help"]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -113,7 +130,7 @@ Column names will be delimited by --delimiter"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmulti run
-  (fn [key fn opts]
+  (fn [key fn opts cli-time-thunks]
     key))
 
 ;; ## Denorm
@@ -122,10 +139,18 @@ Column names will be delimited by --delimiter"
     (doseq [denormed (denorm-fn raw-json)]
       (prn denormed))))
 
-(defmethod run :denorm [_ denorm-fn raw-options]
+(defn invoke-cli-time-thunks! [cli-time-thunks options]
+  (let [xs (:X options)]
+    (doseq [thunk cli-time-thunks]
+      (do
+        (log/debug (str "Executing thunk " thunk))
+        (thunk xs)))))
+
+(defmethod run :denorm [_ denorm-fn raw-options cli-time-thunks]
   (let [parsed (parse-opts raw-options denorm-options)
         options (:options parsed)]
     (exit-if-appropriate! "denorm" parsed)
+    (invoke-cli-time-thunks! cli-time-thunks options)
     (let [i (roll-me-a-reader options)
           o (roll-me-a-writer options)]
       (binding [*in* i
@@ -148,10 +173,11 @@ Column names will be delimited by --delimiter"
       (spit field-order-path (format-fields cumulative-schema "\n")))
     (prn cumulative-schema)))
 
-(defmethod run :schema [_ schema-fn raw-options]
+(defmethod run :schema [_ schema-fn raw-options cli-time-thunks]
   (let [parsed (parse-opts raw-options schema-options)
         options (:options parsed)]
     (exit-if-appropriate! "schema" parsed)
+    (invoke-cli-time-thunks! cli-time-thunks options)
     (let [i (roll-me-a-reader options)
           o (roll-me-a-writer options)
           field-order-path (:field-order options)]
@@ -175,11 +201,12 @@ Column names will be delimited by --delimiter"
     (print record-terminator))
   (flush)) ;; print doesn't call `flush`... only println does!
 
-(defmethod run :project [_ project-fn raw-options]
-  (let [parsed (parse-opts raw-options project-options)]
+(defmethod run :project [_ project-fn raw-options cli-time-thunks]
+  (let [parsed (parse-opts raw-options project-options)
+        options (:options parsed)]
     (exit-if-appropriate! "project" parsed)
-    (let [options (:options parsed)
-          {denorm-path :input,
+    (invoke-cli-time-thunks! cli-time-thunks options)
+    (let [{denorm-path :input,
            schema-path :schema,
            output-path :output,
            header-path :header,
@@ -208,7 +235,7 @@ Column names will be delimited by --delimiter"
 ;; # Auto-generates the -main function that will dispatch to the run multimethod.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmacro def-cli-pipeline [l2-form]
+(defmacro def-cli-pipeline [l2-form & cli-time-thunks]
   `(defn ~(symbol "-main") [& args#]
      (let [[phase# & opts#] args#
            phase-as-keyword# (keyword phase#)
@@ -216,4 +243,5 @@ Column names will be delimited by --delimiter"
            phase-as-fxn# (get fxns# phase-as-keyword#)]
        (run phase-as-keyword#
             phase-as-fxn#
-            opts#))))
+            opts#
+            ~(vec cli-time-thunks)))))

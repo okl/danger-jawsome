@@ -4,20 +4,38 @@
    :date "2014/03/31"}
   (:use clojure.test)
   (:require [roxxi.utils.print :refer [print-expr]])
-  (:require [jawsome-cli.core :refer [def-cli-pipeline]]))
+  (:require [jawsome-cli.core :refer [def-cli-pipeline]]
+            [jawsome-dsl.xform :refer [defvar]]))
 
 ;; # Some preliminary definitions
 
 ;; ## The pipeline
+
 (def simple-pipeline
   '(pipeline
     (denorm-phase
      (read-phase (xforms :read-json))
-     (xform-phase (xforms :denorm)))
+     (xform-phase (custom :static-values (dethunk (ref yield-custom-val-map)))
+                  (xforms :denorm)
+                  (custom :prune-nils)))
     (schema-phase)
     (project-phase)))
 
-(def-cli-pipeline simple-pipeline)
+;; ### Define the thunk that we referenced in the :static-values
+
+(def custom-val (atom nil))
+(defvar 'yield-custom-val-map
+  (fn []
+    {"custom-val" @custom-val}))
+
+(defn set-custom-val! [xs]
+  (let [cli-custom-val (get xs "custom-val")]
+    (swap! custom-val (constantly cli-custom-val))))
+
+;; ### Actual pipeline def
+
+(def-cli-pipeline simple-pipeline
+  set-custom-val!)
 
 ;; ## Helpers
 
@@ -78,3 +96,29 @@
                         ;; (string->buffered-reader s)
                         "--delimiter"
                         delimiter)))))
+
+;; # Thunk defs
+
+(def d-custom-val
+  (with-out-str
+    (-main "denorm"
+           "--input"
+           (string->buffered-reader raw)
+           "-X"
+           "custom-val:my:colon:delimited:string")))
+
+(deftest cli-time-thunks-are-enabled
+  (testing "cli-time-thunks should get invoked"
+    (is (= (map read-string (clojure.string/split d-custom-val #"\n"))
+           (list {"custom_val" "my:colon:delimited:string",
+                  "a" "1",
+                  "b_arr" "2",
+                  "b_idx" 0}
+                 {"custom_val" "my:colon:delimited:string",
+                  "a" "1",
+                  "b_arr" "34",
+                  "b_idx" 1}
+                 {"custom_val" "my:colon:delimited:string",
+                  "foo" "bazzle"}
+                 {"custom_val" "my:colon:delimited:string",
+                  "foo" 123})))))
