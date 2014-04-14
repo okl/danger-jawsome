@@ -1,4 +1,4 @@
-(defproject com.onekingslane.danger/jawsome-cli "1.2.0"
+(defproject com.onekingslane.danger/jawsome-cli "1.2.1"
   :description "CLI bindings around jawsome-dsl"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"

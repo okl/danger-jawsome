@@ -5,6 +5,7 @@
   (:require [roxxi.utils.common :refer [def-]]
             [roxxi.utils.print :refer [print-expr]])
   (:require [jawsome-dsl.core :refer [pipeline-interp
+                                      fields
                                       field-order
                                       default-env]])
   (:require [clojure.tools.cli :refer [parse-opts]])

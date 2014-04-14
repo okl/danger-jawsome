@@ -1,3 +1,8 @@
+# 1.2.1
+
+Bugfix -- changed the `field-order` semantic in jawsome-dsl so have to
+call `fields` on the schema.
+
 # 1.2.0
 
 jawsome-cli is now extensible with arbitrary custom functions!
