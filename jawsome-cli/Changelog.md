@@ -1,3 +1,7 @@
+# 1.2.3
+
+Use jawsome-dsl 1.2.1.
+
 # 1.2.2
 
 `def-cli-pipeline` has a new signature:
