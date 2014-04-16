@@ -138,6 +138,8 @@
                             :type-enforce {["bool_prop_1"] :boolean
                                            ["bool_prop_2"] :boolean})
                            (custom
+                            :log
+                            :log debug
                             :static-values {"syn_prop" 42}
                             :static-values {"additional_prop" 4422}
                             :default-values {"syn_prop" 45
@@ -160,6 +162,8 @@
                                     (xform (lookup translate-paths) {"no" false, "yes" true, "false" false, "true" true, 0 false, 1 true} {["foo"] {"nine" 9, "nueve" 9}, ["bar" "sub_bar"] {"ten" "diez"}})
                                     (xform (lookup type-enforce) {["bool_prop_1"] :boolean, ["bool_prop_2"] :boolean}))
                             (xforms "Custom block"
+                                    (xform (lookup log))
+                                    (xform (lookup log) "debug")
                                     (xform (lookup static-values) {"syn_prop" 42})
                                     (xform (lookup static-values) {"additional_prop" 4422})
                                     (xform (lookup default-values) {"syn_prop" 45, "test_prop" 48})

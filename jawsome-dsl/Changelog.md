@@ -1,3 +1,7 @@
+# 1.2.1
+
+Use jawsome-core 1.1.0.
+
 # 1.2.0
 
 Got rid of `wrap-field-names-with-a-faux-schema`. Now, the

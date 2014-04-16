@@ -62,6 +62,8 @@
              (xform (lookup type-enforce) (dethunk (lookup yield-type-enforcement)))
              (xform (lookup static-values) {"syn_prop" 45})
              (xform (lookup static-values) {"additional_prop" 4422})
+             (xform (lookup log))
+             (xform (lookup log) "debug")
              (xform (lookup default-values) {"syn_prop" 42
                                              "test_prop" 48})
              (xform (lookup prune-nils))

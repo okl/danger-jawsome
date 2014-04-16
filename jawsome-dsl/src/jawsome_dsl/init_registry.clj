@@ -8,6 +8,10 @@
             [jawsome-core.reader.json.core :refer [make-json-reader-fn]])
   (:require [jawsome-core.xform.xforms.denormalize :refer [make-denormalize]]
             [jawsome-core.xform.xforms.hoist :refer [make-hoist]]
+            [jawsome-core.xform.xforms.log :refer [make-log]]
+            [jawsome-core.xform.xforms.post-denorm-cleanup
+             :refer [make-sanitize-field-names
+                     make-remove-empty-string-fields]]
             [jawsome-core.xform.xforms.property-mapping
              :refer [make-property-remapper]]
             [jawsome-core.xform.xforms.pruning :refer [make-prune-nils
@@ -20,10 +24,7 @@
              :refer [make-value-synonymizer
                      make-path-specific-synonymizer]]
             [jawsome-core.xform.xforms.value-type-filter
-             :refer [make-value-type-filter]]
-            [jawsome-core.xform.xforms.post-denorm-cleanup
-             :refer [make-sanitize-field-names
-                     make-remove-empty-string-fields]]))
+             :refer [make-value-type-filter]]))
 
 (defn init []
   ;;this should cause the other fxns in here to be loaded into the registry
@@ -66,6 +67,7 @@
   ;; Xform phase, un-ordered xforms
   (defxform 'static-values static-value-merge-fn)
   (defxform 'default-values default-value-merge-fn)
+  (defxform 'log make-log)
   (defxform 'prune-nils make-prune-nils)
   (defxform 'prune-paths make-prune-paths)
 
