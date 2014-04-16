@@ -34,8 +34,7 @@
 
 ;; ### Actual pipeline def
 
-(def-cli-pipeline simple-pipeline
-  set-custom-val!)
+(def-cli-pipeline simple-pipeline :cli-time-thunks [set-custom-val!])
 
 ;; ## Helpers
 

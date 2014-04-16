@@ -236,7 +236,8 @@ Column names will be delimited by --delimiter"
 ;; # Auto-generates the -main function that will dispatch to the run multimethod.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmacro def-cli-pipeline [l2-form & cli-time-thunks]
+(defmacro def-cli-pipeline [l2-form & {:keys [cli-time-thunks]
+                                       :or {cli-time-thunks nil}}]
   `(defn ~(symbol "-main") [& args#]
      (let [[phase# & opts#] args#
            phase-as-keyword# (keyword phase#)
