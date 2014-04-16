@@ -9,7 +9,7 @@
   ([m]
      (log :info m))
   ([level m]
-     (logger/log level m)
+     (logger/log (keyword level) m)
      m))
 
 (defn make-log
@@ -17,4 +17,4 @@
      (make-log :info))
   ([level]
      (fn [m]
-       (log level m))))
+       (log (keyword level) m))))
