@@ -2,9 +2,11 @@
   "Implements xform pipeline step: Null Pruning"
   {:author "Alex Bahouth"
    :date "11/10/2013"}
+  (:require [roxxi.utils.print :refer [print-expr]])
   (:require [roxxi.utils.collections :refer [prune-map-scalars
                                              dissoc-in
-                                             contains-path?]]))
+                                             contains-path?
+                                             mask-map]]))
 
 (defn prune-nils
   "Removes all property paths that ultimately terminate at a nil"
@@ -32,6 +34,25 @@
 
 (defn prune-paths
   "Removes all specified property paths (regardless of their value)"
-  [inital-map list-of-paths]
+  [initial-map list-of-paths]
   (let [pruner (make-prune-paths list-of-paths)]
-    (pruner inital-map)))
+    (pruner initial-map)))
+
+;; # keep-paths
+
+;; (defn make-keep-paths [mask]
+(defn- paths->mask [list-of-paths]
+  (let [sanitized-list-of-paths (map vectorify list-of-paths)]
+    (reduce (fn [m path] (assoc-in m path true))
+            {}
+            sanitized-list-of-paths)))
+
+(defn make-keep-paths [list-of-paths]
+  (let [mask (paths->mask list-of-paths)]
+    (fn [initial-map]
+      (or (mask-map initial-map mask)
+          {}))))
+
+(defn keep-paths [initial-map list-of-paths]
+  (let [pruner (make-keep-paths list-of-paths)]
+    (pruner initial-map)))

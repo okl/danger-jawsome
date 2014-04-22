@@ -5,6 +5,10 @@
   (:require [roxxi.utils.print :refer [print-expr]])
   (:require [clojure.tools.logging :as logger]))
 
+;; Known levels as of 2014/04/15:
+;;   trace, debug, info, warn, error, fatal
+;; See https://github.com/clojure/tools.logging for current levels.
+
 (defn log
   ([m]
      (log :info m))
