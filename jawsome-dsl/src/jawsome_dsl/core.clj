@@ -3,7 +3,8 @@
   {:author "Matt Halverson"
    :date "2014/02/10"}
   (:require [roxxi.utils.print :refer [print-expr]]
-            [roxxi.utils.common :refer [def-]])
+            [roxxi.utils.common :refer [def-]]
+            [roxxi.utils.collections :refer [walk-apply]])
   (:require [jsonschema.type-system.extract :refer [extract-type-simplifying]]
             [jsonschema.type-system.simplify :refer [simplify-types]]
             [jsonschema.type-system.types :refer [document-type?]]
@@ -25,6 +26,28 @@
   ['schema-phase => :schema-phase] ;; this is the folding fxn (many-to-one)
   ['project-phase => :project-phase] ;; this is the one-to-one
 )
+
+(defn interp-namespaced-pipeline
+  "Pipelines are composed of forms where most/all of the atoms are literals.
+It's convenient to build them with a quoted (') form. But sometimes, it's even
+more convenient to build them with a syntax-quoted (`) form. Only, in Clojure,
+syntax-quoted symbols get fully namespace-resolved.
+
+Thus, `(pipeline (denorm-phase ...)) becomes
+'(my-ns/pipeline (my-ns/denorm-phase ...)), which is not parsable by this
+interpreter.
+
+But, we can just de-namespace-ify all the symbols and get back
+'(pipeline (denorm-phase ...)), and then use the interpreter on THAT.
+
+That's what this function is for."
+  [pipeline env]
+  (let [de-namespace-ify (fn [thing]
+                           (if (symbol? thing)
+                             (symbol (name thing))
+                             thing))
+        sanitized-pipeline (walk-apply pipeline de-namespace-ify)]
+    (pipeline-interp sanitized-pipeline env)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Pipeline is the top-level block. A pipeline may have a denorm phase,

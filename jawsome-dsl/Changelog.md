@@ -1,3 +1,10 @@
+# 1.3.0
+
+Add `only` and `keep-paths` (which are synonyms of each other) to the
+registry.
+
+Add `interp-namespaced-pipeline` to help out those syntax-quote lovers.
+
 # 1.2.1
 
 Use jawsome-core 1.1.0.

@@ -138,8 +138,17 @@
                             :type-enforce {["bool_prop_1"] :boolean
                                            ["bool_prop_2"] :boolean})
                            (custom
-                            :log
+                            :log ;; this defaults to "INFO"
                             :log debug
+                            :prune-paths ["top_level_key"
+                                          ["other_top_level_key"]
+                                          ["top" "nested_one" "nested_two"]]
+                            :keep-paths ["same"
+                                         ["types"]
+                                         ["of" "path" "forms" "as" "prune-paths"]]
+                            :only ["identical"
+                                   ["usage"]
+                                   ["to" "keep-paths"]]
                             :static-values {"syn_prop" 42}
                             :static-values {"additional_prop" 4422}
                             :default-values {"syn_prop" 45
@@ -164,6 +173,9 @@
                             (xforms "Custom block"
                                     (xform (lookup log))
                                     (xform (lookup log) "debug")
+                                    (xform (lookup prune-paths) ["top_level_key" ["other_top_level_key"] ["top" "nested_one" "nested_two"]])
+                                    (xform (lookup keep-paths) ["same" ["types"] ["of" "path" "forms" "as" "prune-paths"]])
+                                    (xform (lookup only) ["identical" ["usage"] ["to" "keep-paths"]])
                                     (xform (lookup static-values) {"syn_prop" 42})
                                     (xform (lookup static-values) {"additional_prop" 4422})
                                     (xform (lookup default-values) {"syn_prop" 45, "test_prop" 48})

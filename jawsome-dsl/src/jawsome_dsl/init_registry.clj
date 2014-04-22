@@ -15,7 +15,8 @@
             [jawsome-core.xform.xforms.property-mapping
              :refer [make-property-remapper]]
             [jawsome-core.xform.xforms.pruning :refer [make-prune-nils
-                                                       make-prune-paths]]
+                                                       make-prune-paths
+                                                       make-keep-paths]]
             [jawsome-core.xform.xforms.reify-values :refer [make-reify-values]]
             [jawsome-core.xform.xforms.static-injection
              :refer [static-value-merge-fn
@@ -70,9 +71,10 @@
   (defxform 'log make-log)
   (defxform 'prune-nils make-prune-nils)
   (defxform 'prune-paths make-prune-paths)
+  (defxform 'keep-paths make-keep-paths)
+  (defxform 'only make-keep-paths)
 
   ;; TODO implement these:
-  ;; - only
   ;; - drop-if-particular-kv-occurs (e.g. path='/server-status?auto')
   ;; - drop-if-had-to-type-enforce
   ;;it is worth remarking that the 'default ordered xforms'

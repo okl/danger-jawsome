@@ -6,6 +6,7 @@
   (:require [roxxi.utils.print :refer [print-expr]])
   (:require [jsonschema.type-system.types :as types])
   (:require [jawsome-dsl.core :refer [pipeline-interp
+                                      interp-namespaced-pipeline
                                       default-env
                                       fields
                                       field-order]]))
@@ -18,7 +19,7 @@
                                  (denorm-phase (xform-phase (xforms :denorm)))
                                  (schema-phase)
                                  (project-phase))
-                               {}))
+                               default-env))
 (def denorm (:denorm pipeline))
 (def schema (:schema pipeline))
 (def project (:project pipeline))
@@ -66,6 +67,15 @@
     (testing "If sort-fields is true, then they should get alphabetized"
       (is (= (map #(project % reversed "|" :sort-fields true) d)
              what-p-should-be)))))
+
+(deftest interp-namespaced-pipeline-works-for-syntax-quoted-pipelines
+  (testing "Because it's convenient to use syntax-quote"
+    (let [fns (interp-namespaced-pipeline
+               `(pipeline (denorm-phase (xform-phase)))
+               default-env)
+          denorm-fn (:denorm fns)]
+      (is (= (denorm-fn {})
+             (list {}))))))
 
 (deftest may-have-zero-or-one-of-each-phase
   (testing "There may either be zero or one"
