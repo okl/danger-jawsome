@@ -27,8 +27,9 @@
             [jawsome-core.xform.xforms.value-type-filter
              :refer [make-value-type-filter]]))
 
-(defn init []
-  ;;this should cause the other fxns in here to be loaded into the registry
+(defn init
+  "Loads the fxns below into the registry"
+  []
 
   ;; Read phase, ordered xforms
   (defxform 'remove-cruft (constantly remove-cruft))
@@ -77,6 +78,4 @@
   ;; TODO implement these:
   ;; - drop-if-particular-kv-occurs (e.g. path='/server-status?auto')
   ;; - drop-if-had-to-type-enforce
-  ;;it is worth remarking that the 'default ordered xforms'
-  ;; can also be treated as library, of course.
   )
