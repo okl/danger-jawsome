@@ -5,9 +5,11 @@
   (:require [roxxi.utils.common :refer [def-]]
             [roxxi.utils.print :refer [print-expr]])
   (:require [jawsome-dsl.core :refer [pipeline-interp
+                                      interp-namespaced-pipeline
                                       fields
                                       field-order
-                                      default-env]])
+                                      default-env]]
+            [jawsome-dsl.xform :refer [defvar]])
   (:require [clojure.tools.cli :refer [parse-opts]])
   (:require [clojure.tools.logging :as log])
   (:require [clojure.java.io :as io]))
@@ -140,7 +142,7 @@ Column names will be delimited by --delimiter"
     (doseq [denormed (denorm-fn raw-json)]
       (prn denormed))))
 
-(defn invoke-cli-time-thunks! [cli-time-thunks options]
+(defn- invoke-cli-time-thunks! [cli-time-thunks options]
   (let [xs (:X options)]
     (doseq [thunk cli-time-thunks]
       (do
@@ -233,17 +235,72 @@ Column names will be delimited by --delimiter"
         (.close o)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; # Auto-generates the -main function that will dispatch to the run multimethod.
+;; # Main helpers
+;;
+;; Note that def-[multi-]cli-pipeline will auto-generate a -main function
+;; and do a :gen-class FOR YOU! Magic!
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmacro mimic-gen-class-directive
+  "Functionally equivalent to putting `(:gen-class)` at the ns macro at the top
+of your file."
+  []
+  `(gen-class :name (ns-name *ns*)
+              :main true
+              :impl-ns *ns*
+              :init-impl-ns true))
+
+(def pipeline-name=>pipeline (atom {}))
+(def pipeline-name=>cli-time-thunks (atom {}))
+
+(defn main-helper [args]
+  (let [[pipeline-name phase & opts] args
+
+        l2-form (get @pipeline-name=>pipeline pipeline-name)
+        fxns (interp-namespaced-pipeline l2-form default-env)
+
+        cli-time-thunks (get @pipeline-name=>cli-time-thunks pipeline-name)
+
+        phase-as-keyword (keyword phase)
+        phase-as-fxn (get fxns phase-as-keyword)]
+    (run phase-as-keyword
+         phase-as-fxn
+         opts
+         (vec cli-time-thunks))))
+
+(defn- extract-cli-time-thunks [& {:keys [cli-time-thunks]
+                                   :or {cli-time-thunks nil}}]
+  cli-time-thunks)
+
+
+;; ## def-multi-cli-pipeline
+
+;; In a def-multi-cli-pipeline, every cli-pipeline-def begins
+;; with the PIPELINE-NAME, then the forms that comprise the PIPELINE-DEF,
+;; then the CLI-TIME-THUNKS.
+(defmacro def-multi-cli-pipeline [& cli-pipeline-defs]
+  (let [pipelines-map (zipmap (map first cli-pipeline-defs)
+                              (map second cli-pipeline-defs))
+        thunks-map (zipmap (map first cli-pipeline-defs)
+                           (map #(apply extract-cli-time-thunks (rest (rest %))) cli-pipeline-defs))]
+    `(do
+       (mimic-gen-class-directive)
+       (swap! pipeline-name=>pipeline (constantly ~pipelines-map))
+       (swap! pipeline-name=>cli-time-thunks (constantly ~thunks-map))
+       (defn ~(symbol "-main") [& args#]
+         (main-helper args#)))))
+
+;; ## def-cli-pipeline
+
+(def- default-pipeline-name "main")
 
 (defmacro def-cli-pipeline [l2-form & {:keys [cli-time-thunks]
                                        :or {cli-time-thunks nil}}]
-  `(defn ~(symbol "-main") [& args#]
-     (let [[phase# & opts#] args#
-           phase-as-keyword# (keyword phase#)
-           fxns# (pipeline-interp ~l2-form default-env)
-           phase-as-fxn# (get fxns# phase-as-keyword#)]
-       (run phase-as-keyword#
-            phase-as-fxn#
-            opts#
-            ~(vec cli-time-thunks)))))
+  (let [pipelines-map {default-pipeline-name l2-form}
+        thunks-map    {default-pipeline-name cli-time-thunks}]
+    `(do
+       (mimic-gen-class-directive)
+       (swap! pipeline-name=>pipeline (constantly ~pipelines-map))
+       (swap! pipeline-name=>cli-time-thunks (constantly ~thunks-map))
+       (defn ~(symbol "-main") [& args#]
+         (main-helper (list* ~default-pipeline-name args#))))))

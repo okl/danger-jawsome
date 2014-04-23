@@ -38,7 +38,7 @@
 
 ;; ## Helpers
 
-(defn- string->buffered-reader [s]
+(defn string->buffered-reader [s]
   (clojure.java.io/reader (java.io.StringReader. s)))
 
 ;; ## Sample data

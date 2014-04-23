@@ -1,3 +1,11 @@
+# 1.3.0
+
+Add `def-multi-cli-pipeline`.
+
+Add `mimic-gen-class-directive` to both def-cli-pipeline and
+def-multi-cli-pipeline, so you don't need to put a `(:gen-class)` at
+the top of your namespace anymore.
+
 # 1.2.3
 
 Use jawsome-dsl 1.2.1.
