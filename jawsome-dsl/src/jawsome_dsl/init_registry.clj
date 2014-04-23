@@ -72,6 +72,7 @@
   (defxform 'log make-log)
   (defxform 'prune-nils make-prune-nils)
   (defxform 'prune-paths make-prune-paths)
+  (defxform 'remove make-prune-paths)
   (defxform 'keep-paths make-keep-paths)
   (defxform 'only make-keep-paths)
 
