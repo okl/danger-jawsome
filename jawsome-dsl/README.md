@@ -66,6 +66,17 @@ env like `jawsome-dsl.denorm/env-to-disable-post-denorm-cleanup`.
   schema, and a field delimiter, and it returns an
   xsv-projected-record.
 
+### Project-fn extras
+
+There are a couple of extra options associated with the project-fn:
+
+1. If you don't have a schema to pass in, you may instead pass in a
+   seq of strings representing the field names.
+1. If you're passing in a field-name seq, and you want the field-name
+   seq order to be the column order, just call the project-fn with
+   `:sort-fields false`. Otherwise, by default, the project-fn will
+   put the xsv-fields in alphabetical order.
+
 ### Syntax-quoted pipelines
 
 Sometimes it's really convenient to use a syntax-quote when building a
