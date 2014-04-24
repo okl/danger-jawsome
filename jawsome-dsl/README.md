@@ -25,11 +25,11 @@ create high-level Clojure functions that do exactly what you need.
 The main construct used in jawsome-dsl is the pipeline. A pipeline may
 have up to three phases:
 
-1. *Denorm* cleanup and denormalize the input data (flattens
+1. **Denorm** cleanup and denormalize the input data (flattens
    hierarchical / nested structures, denormalizes collections /
    arrays)
-2. *Schema* determine the schema of the denormalized data
-3. *Project* project the denormalized data from free-schema
+2. **Schema** determine the schema of the denormalized data
+3. **Project** project the denormalized data from free-schema
    association-lists (i.e. Clojure maps) to fixed-schema CSV rows. In
    practice, this means "rewriting the Clojure maps into CSV rows,
    leaving holes for columns/fields that didn't appear in a given
