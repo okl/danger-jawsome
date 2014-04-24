@@ -168,7 +168,7 @@ E.g. if I want an xform that removes fields with a certain value:
 
     (defxform 'remove-fields make-remove-fields)
 
-See init_registry.clj for more defxform examples.
+See init_registry.clj or xform_test.clj for more defxform examples.
 
 ### Registering custom vars (defvar)
 
@@ -180,6 +180,8 @@ myvar)` after having done `(defvar 'myvar 42)`
 You can also define thunks (i.e. functions that take no arguments)
 using defvar. Invoke them at interpret time using `dethunk`,
 e.g. `(dethunk (ref mythunk))` after having done `(defvar 'mythunk )`
+
+See xform_test.clj for defvar examples.
 
 ### Implementation notes: Interpreters!
 
