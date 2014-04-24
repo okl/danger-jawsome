@@ -2,12 +2,22 @@ danger-jawsome
 ==============
 
 A framework for rapidly configuring and deploying JSON Denormalization
-processes
+processes.
+
+If you're new to jawsome, you should proceed in the following
+order:
+
+1. jawsome-core
+1. jawsome-dsl
+1. jawsome-cli / jawsome-hadoop
+
+You are also encouraged to peruse the unit tests for those
+projects. You'll get a lot of usage examples from them.
 
 # Goals
 
 Before we set out to build something, let's just have a nice little
-brain dump- you know, for historical purposes.
+brain dump - you know, for historical purposes.
 
 # The Problem
 
@@ -126,7 +136,7 @@ store the data. Since Vertica is also a cluster-deployed database,
 data is segmented and partitioned across several nodes which
 provides for parallel execution of queries.
 
-The use of a columnar database that is optomized for relational cubes
+The use of a columnar database that is optimized for relational cubes
 and fact tables is a huge boon for us since they have a number of
 optimizations that take into consideration that your data has LOTS of
 duplication in values in each column.
@@ -136,7 +146,7 @@ duplication in values in each column.
 
 # Technical Overview
 
-The purpose of Jawsome is two fold:
+The purpose of Jawsome is two-fold:
 
 1. A _framework_ for constructing an engine for the above outlined
  JSON denormalization process
